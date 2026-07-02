@@ -132,6 +132,11 @@ nav {
   .lang-switcher { margin-left: 0.5rem; }
 }
 
+/* ── MOBILE PAGE HERO SPACING ───────────────────────── */
+@media (max-width: 768px) {
+  .page-hero { padding-top: 5.5rem; }
+}
+
 /* ── MOBILE GRID OVERRIDES ───────────────────────────── */
 @media (max-width: 700px) {
   .confiab-grid {

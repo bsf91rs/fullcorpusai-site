@@ -118,29 +118,33 @@
     @media (max-width: 768px) {
       nav {
         height: auto;
+        flex-direction: row;
         flex-wrap: wrap;
-        padding: 0.6rem clamp(1rem, 4vw, 2rem);
         align-items: center;
+        padding: 0.5rem clamp(0.75rem, 4vw, 1.5rem);
+        gap: 0.35rem;
       }
+      .nav-logo { display: none; }
       .nav-cta { display: none; }
+      .nav-mobile-toggle { display: none !important; }
       .nav-links {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        padding: 0.5rem 0 0.5rem;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        margin-top: 0.5rem;
-        list-style: none;
-        gap: 0;
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0 0.6rem;
+        padding: 0;
+        margin: 0;
+        width: auto;
+        border-top: none;
+        margin-top: 0;
       }
       .nav-links a {
-        font-size: 0.9rem;
-        display: block;
-        padding: 0.65rem 0.25rem;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        font-size: 0.7rem;
+        display: inline;
+        padding: 0.2rem 0;
+        border-bottom: none;
       }
-      nav.nav-open .nav-links { display: flex; }
-      .nav-mobile-toggle { display: flex; }
+      .nav-item-about { display: none !important; }
     }
 
     @media (max-width: 700px) {
@@ -415,7 +419,7 @@
     }
     @media (max-width: 700px) {
       .steps-row { flex-direction: column; }
-      .step-arrow { width: auto; height: 2.5rem; }
+      .step-arrow { width: auto; height: 2.5rem; transform: rotate(90deg); }
     }
 
     .step {
@@ -654,6 +658,7 @@
       transform: none;
     }
   </style>
+<script src="favicon-gen.js"></script>
 </head>
 <body>
 
@@ -689,12 +694,8 @@
       <div class="hero-content">
         <div class="badge">Ferramenta de IA para pesquisa em escala</div>
         <h1>
-          Analise centenas de documentos<br/>
-          com <span class="grad">precisão e velocidade.</span>
+          Tenha a pré-análise das suas <span class="grad">Revisões Sistemáticas, Análise de Entrevistas e Análises documentais</span> de forma robusta, confiável e em poucas horas.
         </h1>
-        <p style="margin-top:1.5rem;font-size:clamp(1.05rem,1.8vw,1.3rem);color:var(--text);line-height:1.75;max-width:620px;opacity:0.85;">
-          Tenha a pré-análise das suas <strong>Revisões Sistemáticas</strong>, <strong>Análise de Entrevistas</strong> e <strong>Análises documentais</strong> de forma robusta, confiável e em poucas horas.
-        </p>
       </div>
     </div>
   </section>
@@ -783,8 +784,7 @@
           <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;height:180px;overflow:hidden;margin-bottom:1.25rem;">
             <img src="Dados Extraídos - captura de tela.png" alt="Extração pelo software" style="width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.4);transform-origin:center center;" />
           </div>
-          <p style="font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:0.5rem;">Após a análise do software</p>
-          <h3>O software extrai os dados e tabulamos</h3>
+          <h3>Após a análise do software, o software extrai os dados e tabulamos</h3>
           <p>Os LLMs analisam cada documento individualmente, com os mesmos critérios, e os dados são tabulados automaticamente para uma melhor apresentação.</p>
         </div>
       </div>

@@ -124,28 +124,37 @@
     @media (max-width: 768px) {
       nav {
         height: auto;
+        flex-direction: row;
         flex-wrap: wrap;
-        padding: 0.6rem clamp(1rem, 4vw, 2rem);
         align-items: center;
+        padding: 0.5rem clamp(0.75rem, 4vw, 1.5rem);
+        gap: 0.35rem;
       }
+      .nav-logo { display: none; }
+      .nav-cta { display: none; }
+      .nav-mobile-toggle { display: none !important; }
       .nav-links {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        padding: 0.5rem 0 0.5rem;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        margin-top: 0.5rem;
-        list-style: none;
-        gap: 0;
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0 0.6rem;
+        padding: 0;
+        margin: 0;
+        width: auto;
+        border-top: none;
+        margin-top: 0;
       }
       .nav-links a {
-        font-size: 0.9rem;
-        display: block;
-        padding: 0.65rem 0.25rem;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        font-size: 0.7rem;
+        display: inline;
+        padding: 0.2rem 0;
+        border-bottom: none;
       }
-      nav.nav-open .nav-links { display: flex; }
-      .nav-mobile-toggle { display: flex; }
+      .nav-item-about { display: none !important; }
+    }
+    @media (max-width: 700px) {
+      .steps-row { flex-direction: column; }
+      .step-arrow { width: auto; height: 2.5rem; transform: rotate(90deg); }
     }
 
     @media (max-width: 700px) {
@@ -580,6 +589,7 @@
       transform: none;
     }
   </style>
+<script src="../favicon-gen.js"></script>
 </head>
 <body>
 
@@ -615,12 +625,8 @@
       <div class="hero-content">
         <div class="badge">AI Tool for Large-Scale Research</div>
         <h1>
-          Analyze hundreds of documents<br/>
-          with <span class="grad">precision and speed.</span>
+          Get the pre-analysis of your <span class="grad">Systematic Reviews, Interview Analysis and Documentary Analysis</span> in a robust, reliable way — in just a few hours.
         </h1>
-        <p style="margin-top:1.5rem;font-size:clamp(1.05rem,1.8vw,1.3rem);color:var(--text);line-height:1.75;max-width:620px;opacity:0.85;">
-          Get the pre-analysis of your <strong>Systematic Reviews</strong>, <strong>Interview Analysis</strong> and <strong>Documentary Analysis</strong> in a robust, reliable way — in just a few hours.
-        </p>
       </div>
     </div>
   </section>
