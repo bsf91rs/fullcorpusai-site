@@ -115,7 +115,7 @@ nav {
   .nav-logo { display: none; }
   .nav-cta { display: none; }
   .nav-mobile-toggle { display: none; }
-  .nav-tree-mobile { display: block; height: 20px; width: auto; flex-shrink: 0; margin-right: 0.25rem; }
+  .nav-tree-mobile { display: block !important; height: 20px; width: auto; flex-shrink: 0; margin-right: 0.25rem; }
   .nav-links {
     display: flex !important;
     flex-direction: row;
