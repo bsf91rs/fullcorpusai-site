@@ -41,5 +41,5 @@
     link.href = canvas.toDataURL('image/png');
     document.head.appendChild(link);
   };
-  img.src = base + 'fullcorpus_ai_transparente_alta.png';
+  img.src = base + 'arvore_azul_escura_sem_fundo_945px_300dpi.png';
 })();
