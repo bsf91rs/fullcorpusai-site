@@ -1,0 +1,46 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Redirect /en/ root to /en/index.html
+[[redirects]]
+  from = "/en"
+  to = "/en/index.html"
+  status = 200
+
+# Clean URLs: /en/software → /en/software.html
+[[redirects]]
+  from = "/en/software"
+  to = "/en/software.html"
+  status = 200
+
+[[redirects]]
+  from = "/en/services"
+  to = "/en/services.html"
+  status = 200
+
+[[redirects]]
+  from = "/en/team"
+  to = "/en/team.html"
+  status = 200
+
+[[redirects]]
+  from = "/en/story"
+  to = "/en/story.html"
+  status = 200
+
+[[redirects]]
+  from = "/en/contact"
+  to = "/en/contact.html"
+  status = 200
+
+[[redirects]]
+  from = "/en/about"
+  to = "/en/about.html"
+  status = 200

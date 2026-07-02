@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Software — FullCorpus AI</title>
+  <meta name="description" content="Meet FullCorpus AI software — the layer that orchestrates LLMs for large-scale document analysis, with rigor and reproducibility." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared.css" />
+  <style>
+    /* ── OVERVIEW ──────────────────────────────────────────── */
+    #overview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+      padding: 5rem clamp(1.5rem,5vw,4rem) 6rem;
+    }
+    @media (max-width: 860px) {
+      #overview { grid-template-columns: 1fr; gap: 3rem; }
+    }
+
+    /* ── CODE PANEL ────────────────────────────────────────── */
+    .code-panel {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .code-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .dot-r { width:10px;height:10px;border-radius:50%;background:#ff5f57; }
+    .dot-y { width:10px;height:10px;border-radius:50%;background:#febc2e; }
+    .dot-g { width:10px;height:10px;border-radius:50%;background:#28c840; }
+    .code-bar span { font-family: 'JetBrains Mono',monospace; font-size:0.7rem; color:var(--faint); margin-left: auto; }
+    .code-body {
+      padding: 1.5rem 1.5rem 2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.85;
+      color: #94a3b8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .t-kw  { color: #7dd3fc; }
+    .t-str { color: #86efac; }
+    .t-cm  { color: #475569; }
+    .t-fn  { color: #c4b5fd; }
+    .t-num { color: #fca5a5; }
+    .t-ok  { color: #4ade80; }
+
+    /* ── FEATURES ──────────────────────────────────────────── */
+    #features { background: var(--bg2); border-top: 1px solid var(--border); }
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .feat-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      transition: border-color .25s, transform .25s;
+    }
+    .feat-card:hover {
+      border-color: rgba(59,130,246,0.25);
+      transform: translateY(-3px);
+    }
+    .feat-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: rgba(59,130,246,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 1.25rem;
+    }
+    .feat-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .feat-card p  { font-size: 0.83rem; color: var(--muted); line-height: 1.65; }
+
+    /* ── MODELS ────────────────────────────────────────────── */
+    #models { padding: 6rem clamp(1.5rem,5vw,4rem); }
+    .models-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 3rem;
+    }
+    .model-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color .2s;
+    }
+    .model-card:hover { border-color: var(--border2); }
+    .model-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .model-card .info strong { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.15rem; }
+    .model-card .info span  { font-size: 0.75rem; color: var(--muted); }
+    .model-badge {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+    .badge-stable { color: #4ade80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); }
+    .badge-beta   { color: #fbbf24; background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.2);  }
+
+    /* ── CTA ─────────────────────────────────────────────── */
+    #cta-software {
+      text-align: center;
+      padding: 6rem clamp(1.5rem,5vw,4rem);
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    #cta-software .section-title { max-width: 520px; margin: 0 auto 1rem; }
+    #cta-software .section-sub   { margin: 0 auto 2.5rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <img class="nav-logo-img" src="../Para o site - horizontal.png" alt="FullCorpus AI" />
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">What is FullCorpus AI</a></li>
+    <li><a href="software.html" class="active">Software</a></li>
+    <li><a href="services.html">Services</a></li>
+    <li><a href="team.html">Team</a></li>
+    <li><a href="story.html">Story</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="lang-switcher">
+    <a href="../software.html" class="lang-link"><img src="../assets/flags/br.svg" alt="PT" width="22" style="border-radius:2px;vertical-align:middle;"></a>
+    <span class="lang-active"><img src="../assets/flags/us.svg" alt="EN" width="22" style="border-radius:2px;vertical-align:middle;"></span>
+  </div>
+</nav>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-bg"></div>
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-content">
+    <p class="section-label">The Software</p>
+    <h1 style="font-size:clamp(1.25rem,2.5vw,1.75rem);font-weight:700;letter-spacing:-0.01em;line-height:1.3;"><span class="grad">Large-scale document analysis.</span></h1>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="overview" style="padding:5rem clamp(1.5rem,5vw,4rem) 6rem;">
+  <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto 4rem;">
+    <p class="section-label" style="justify-content:center;">How it works</p>
+    <h2 class="section-title">From corpus to results<br/>in 3 steps.</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;max-width:1000px;margin:0 auto;">
+    <div class="glass-card reveal" style="padding:2rem;text-align:center;">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;height:160px;overflow:hidden;margin-bottom:1rem;">
+        <img src="../Base de dados em PDF2.png" alt="Document corpus" style="width:100%;height:100%;object-fit:cover;display:block;" />
+      </div>
+      <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:0.75rem;">Step 1</div>
+      <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">Load the corpus</h4>
+      <p style="font-size:0.83rem;color:var(--muted);line-height:1.6;">Add your PDFs, articles, or text documents. The software automatically detects and organizes them.</p>
+    </div>
+    <div class="glass-card reveal reveal-delay-1" style="padding:2rem;text-align:center;">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;height:160px;overflow:hidden;margin-bottom:1rem;">
+        <img src="../Dados Extraídos - captura de tela.png" alt="Data extraction by software" style="width:100%;height:100%;object-fit:cover;display:block;" />
+      </div>
+      <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:0.75rem;">Step 2</div>
+      <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">Software extracts data and we tabulate it</h4>
+      <p style="font-size:0.83rem;color:var(--muted);line-height:1.6;">The software applies the same criteria to each document individually — data is automatically tabulated.</p>
+    </div>
+    <div class="glass-card reveal reveal-delay-2" style="padding:2rem;text-align:center;">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;height:160px;overflow:hidden;margin-bottom:1rem;">
+        <img src="../imagem 3 - .png" alt="Results report" style="width:100%;height:100%;object-fit:cover;display:block;" />
+      </div>
+      <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:0.75rem;">Step 3</div>
+      <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">Results report</h4>
+      <p style="font-size:0.83rem;color:var(--muted);line-height:1.6;">Results are consolidated into an exportable report with syntheses, clusters, and full traceability.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TIME -->
+<section style="padding:5rem clamp(1.5rem,5vw,4rem);border-top:1px solid var(--border);">
+  <div class="reveal" style="padding:2.5rem 3rem;background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.18);border-radius:20px;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;">
+    <div style="flex:1;min-width:220px;">
+      <p class="section-label">Time</p>
+      <h2 class="section-title">How long does<br/>each analysis take?</h2>
+    </div>
+    <p style="color:var(--muted);font-size:clamp(1.1rem,1.8vw,1.35rem);margin:0;line-height:1.8;max-width:480px;">
+      It depends on the number of data points to be analyzed. Our average estimate is <strong style="color:var(--text);">approximately 1 hour per 100 documents</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- RELIABILITY -->
+<section id="reliability" style="background:var(--bg2);border-top:1px solid var(--border);padding:6rem clamp(1.5rem,5vw,4rem);">
+  <div class="reveal" style="display:grid;grid-template-columns:repeat(2,1fr);gap:3rem 4rem;align-items:start;">
+    <div>
+      <p class="section-label">Performance</p>
+      <h2 class="section-title">How reliable<br/>is the tool?</h2>
+      <p class="section-sub" style="margin-top:0.75rem;">
+        According to our tests, data extraction achieves near 100% accuracy — surpassing manual reading in exhaustiveness and consistency. Errors are still possible, which is why every analysis is traceable and reviewable. Reliability is further reinforced by adequacy crosschecking analyses, which verify the correspondence between what was extracted and the original documents.
+      </p>
+    </div>
+    <div>
+      <p class="section-label">Reliability</p>
+      <h2 class="section-title">We didn't reinvent<br/>the wheel.</h2>
+      <p class="section-sub" style="margin-top:0.75rem;">
+      <p class="section-sub" style="margin-top:0.75rem;">
+        FullCorpus AI is not an AI or an LLM. It is software that automates the use of LLMs (GPT, Gemini, and Claude). Its reliability is therefore on par with high-effort, high-reasoning models.
+      </p>
+    </div>
+    <div>
+      <p class="section-label">Our differentiator</p>
+      <h2 class="section-title">Rigor and<br/>exhaustiveness.</h2>
+      <p class="section-sub" style="margin-top:0.75rem;">
+        Data is not mixed in bulk — each document is analyzed <strong style="color:var(--text);">individually</strong>, with the same criteria applied one by one. It is like running the same prompt for every document, on a model with the highest reasoning effort.
+      </p>
+    </div>
+    <div>
+      <p class="section-label">Application</p>
+      <h2 class="section-title">At what stage<br/>is it valid?</h2>
+      <p class="section-sub" style="margin-top:0.75rem;">
+        We recommend it as a <strong style="color:var(--text);">pre-analysis stage</strong> — an initial round of analysis, often also simulating possible results and findings. Researcher review and analysis are still necessary.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-top:4rem;">
+    <div class="feat-card reveal">
+      <div class="feat-icon">🏢</div>
+      <h4>Big Tech APIs, not proprietary models</h4>
+      <p>We use developer APIs from GPT, Gemini, and Claude — with greater context capacity and performance than chat interfaces.</p>
+    </div>
+    <div class="feat-card reveal reveal-delay-1">
+      <div class="feat-icon">✅</div>
+      <h4>Superior to chatbots in exhaustiveness</h4>
+      <p>While chatbots answer one question at a time, FullCorpus AI applies the same criteria to hundreds of documents with fidelity and consistency.</p>
+    </div>
+    <div class="feat-card reveal reveal-delay-2">
+      <div class="feat-icon">⚠️</div>
+      <h4>Still AI: review recommended</h4>
+      <p>Errors can occur. That is why every analysis is documented and reviewable — traceability is part of the process, not an add-on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="reveal" style="max-width:600px;">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">Everything you need<br/>in one place.</h2>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card reveal">
+      <div class="feat-icon">⚡</div>
+      <h4>Batch Processing</h4>
+      <p>Analyze dozens or hundreds of documents in sequence, with the same prompt and criteria applied to each one.</p>
+    </div>
+    <div class="feat-card reveal reveal-delay-1">
+      <div class="feat-icon">🔁</div>
+      <h4>Multi-Model</h4>
+      <p>Choose GPT, Gemini, Claude, or others for each task. Switch models without reconfiguring the workflow.</p>
+    </div>
+    <div class="feat-card reveal reveal-delay-2">
+      <div class="feat-icon">📋</div>
+      <h4>Structured Output</h4>
+      <p>Results in tabular format (.xlsx, .csv) with one row per document, ready for statistical analysis.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-icon">🔍</div>
+      <h4>Full Traceability</h4>
+      <p>Every analysis records the model, version, temperature, and prompt used — with a unique identification hash.</p>
+    </div>
+    <div class="feat-card reveal reveal-delay-1">
+      <div class="feat-icon">📁</div>
+      <h4>PDF and Text Support</h4>
+      <p>Import PDFs, scientific articles, .txt and .docx documents. The software prepares and normalizes them automatically.</p>
+    </div>
+    <div class="feat-card reveal reveal-delay-2">
+      <div class="feat-icon">🌐</div>
+      <h4>Multi-Language</h4>
+      <p>Analyze documents in Portuguese, English, Spanish, and other languages — with prompts in any language.</p>
+    </div>
+  </div>
+</section>
+
+<!-- MODELS -->
+<section id="models">
+  <div class="reveal" style="max-width:600px;">
+    <p class="section-label">Compatibility</p>
+    <h2 class="section-title">The best LLMs,<br/>in a single tool.</h2>
+  </div>
+  <div class="models-grid reveal">
+    <div class="model-card">
+      <div class="model-dot" style="background:#10a37f;box-shadow:0 0 8px rgba(16,163,127,0.4)"></div>
+      <div class="info"><strong>GPT</strong><span>OpenAI</span></div>
+      <span class="model-badge badge-stable">Available</span>
+    </div>
+    <div class="model-card">
+      <div class="model-dot" style="background:#4285f4;box-shadow:0 0 8px rgba(66,133,244,0.4)"></div>
+      <div class="info"><strong>Gemini</strong><span>Google</span></div>
+      <span class="model-badge badge-stable">Available</span>
+    </div>
+    <div class="model-card">
+      <div class="model-dot" style="background:#d97757;box-shadow:0 0 8px rgba(217,119,87,0.4)"></div>
+      <div class="info"><strong>Claude</strong><span>Anthropic</span></div>
+      <span class="model-badge badge-stable">Available</span>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta-software">
+  <div class="cta-glow"></div>
+  <div class="reveal" style="position:relative;">
+    <p class="section-label" style="justify-content:center;">Early access</p>
+    <h2 class="section-title">Want to try<br/>FullCorpus AI?</h2>
+    <p class="section-sub">
+      We are selecting researchers and teams for our early access program.
+      Get in touch and tell us about your corpus.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a class="btn-primary" href="contact.html">Request access →</a>
+      <a href="services.html" style="display:inline-flex;align-items:center;gap:.5rem;padding:.875rem 2rem;border-radius:8px;font-size:1rem;font-weight:700;background:#d97706;color:#fff;text-decoration:none;transition:opacity .2s,transform .2s;box-shadow:0 0 28px rgba(217,119,6,0.3);" onmouseover="this.style.opacity='.85';this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='1';this.style.transform='none'">See other services →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo"><span>Full</span>Corpus AI</div>
+  <nav style="position:static;background:none;border:none;height:auto;padding:0;display:flex;gap:1.5rem;flex-wrap:wrap;">
+    <a href="index.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Home</a>
+    <a href="services.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Services</a>
+    <a href="team.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Team</a>
+    <a href="story.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Story</a>
+    <a href="contact.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Contact</a>
+  </nav>
+  <p>© 2026 FullCorpus AI · fullcorpusai.com.br</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

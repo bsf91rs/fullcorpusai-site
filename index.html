@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FullCorpus AI — Análise de documentos em escala com LLMs</title>
+  <meta name="description" content="FullCorpus AI automatiza a análise de grandes volumes de documentos utilizando os principais modelos de linguagem. Mais rigor, mais escala, menos esforço." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080c14;
+      --bg2: #0d1320;
+      --bg3: #111928;
+      --border: rgba(255,255,255,0.07);
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+      --accent-glow: rgba(59,130,246,0.25);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --faint: #334155;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── FEAT CARDS ──────────────────────────────────────── */
+    .feat-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      transition: border-color .25s, transform .25s;
+    }
+    .feat-card:hover {
+      border-color: rgba(59,130,246,0.25);
+      transform: translateY(-3px);
+    }
+    .feat-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: rgba(59,130,246,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 1.25rem;
+    }
+    .feat-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .feat-card p  { font-size: 0.83rem; color: var(--muted); line-height: 1.65; }
+
+    /* ── NAV ─────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1.5rem, 5vw, 4rem);
+      height: 64px;
+      background: #091525;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .nav-logo { display: flex; align-items: center; text-decoration: none; }
+    .nav-logo-img { height: 40px; width: auto; display: block; }
+    .hero-logo {
+      width: 100%;
+      max-width: 414px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .nav-cta:hover { opacity: 0.85; }
+
+    @media (max-width: 640px) {
+      /* nav-links shown via shared.css mobile rules */
+    }
+
+    /* ── HERO ────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8rem clamp(2rem, 7vw, 8rem) 6rem;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(2rem, 7vw, 8rem);
+      align-items: center;
+      width: 100%;
+      max-width: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-logo-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    @media (max-width: 800px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .hero-logo-col { justify-content: center; }
+      .hero-content { align-items: center; }
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 60%, rgba(6,182,212,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* animated grid lines */
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 0%, transparent 80%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #E8A020;
+      background: rgba(232,160,32,0.1);
+      border: 1px solid rgba(232,160,32,0.28);
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 2rem;
+    }
+    .badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #E8A020;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 4.3vw, 3.6rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      max-width: 800px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .grad {
+      background: linear-gradient(135deg, #E8A020 0%, #F5C842 60%, #5BA8E0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: clamp(0.72rem, 1.44vw, 0.9rem);
+      color: var(--muted);
+      max-width: 560px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+    @media (max-width: 800px) {
+      .hero-actions { justify-content: center; }
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 0 32px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 48px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      background: rgba(255,255,255,0.04);
+      transition: background .2s, border-color .2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    /* ── LOGOS LLM ───────────────────────────────────────── */
+    .llm-strip {
+      padding: 3rem clamp(1.5rem, 5vw, 4rem);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .llm-strip p {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 2rem;
+    }
+    .llm-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(2rem, 5vw, 5rem);
+      flex-wrap: wrap;
+    }
+    .llm-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--muted);
+      opacity: 0.7;
+      transition: opacity .2s;
+    }
+    .llm-pill:hover { opacity: 1; }
+    .llm-pill .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .dot-gpt  { background: #10a37f; }
+    .dot-gem  { background: #4285f4; }
+    .dot-cla  { background: #d97757; }
+
+    /* ── SECTIONS ────────────────────────────────────────── */
+    section { padding: 6rem clamp(1.5rem, 5vw, 4rem); }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 540px;
+      line-height: 1.7;
+    }
+
+    /* ── HOW IT WORKS ────────────────────────────────────── */
+    #como-funciona { background: var(--bg2); }
+
+    .steps-grid {
+      margin-top: 3.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .steps-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+    }
+    .step-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 3.5rem;
+      color: var(--accent2);
+      font-size: 2rem;
+      font-weight: 300;
+      opacity: 0.9;
+    }
+    .step-arrow-down {
+      text-align: center;
+      color: var(--accent2);
+      font-size: 2rem;
+      opacity: 0.9;
+      line-height: 1;
+      padding: 0.25rem 0;
+    }
+    @media (max-width: 700px) {
+      .steps-row { flex-direction: column; }
+      .step-arrow { width: auto; height: 2.5rem; }
+    }
+
+    .step {
+      position: relative;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      flex: 1;
+      transition: border-color .25s, transform .25s;
+    }
+    .step:hover {
+      border-color: rgba(59,130,246,0.3);
+      transform: translateY(-3px);
+    }
+
+    .step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: rgba(59,130,246,0.12);
+      width: 2rem; height: 2rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .step h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .step p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── FEATURES ────────────────────────────────────────── */
+    #funcionalidades {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      #funcionalidades { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .features-list { list-style: none; margin-top: 2.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .feature-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .feature-icon {
+      flex-shrink: 0;
+      width: 2.25rem; height: 2.25rem;
+      border-radius: 8px;
+      background: rgba(59,130,246,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      margin-top: 0.1rem;
+    }
+    .feature-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .feature-item p  { font-size: 0.85rem; color: var(--muted); line-height: 1.55; }
+
+    /* code panel */
+    .code-panel {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .code-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .dot-r { width:10px;height:10px;border-radius:50%;background:#ff5f57; }
+    .dot-y { width:10px;height:10px;border-radius:50%;background:#febc2e; }
+    .dot-g { width:10px;height:10px;border-radius:50%;background:#28c840; }
+    .code-bar span { font-family: 'JetBrains Mono',monospace; font-size:0.7rem; color:var(--faint); margin-left: auto; }
+
+    .code-body {
+      padding: 1.5rem 1.5rem 2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      color: #94a3b8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .t-kw  { color: #7dd3fc; }
+    .t-str { color: #86efac; }
+    .t-cm  { color: #475569; }
+    .t-fn  { color: #c4b5fd; }
+    .t-num { color: #fca5a5; }
+
+    /* ── USE CASES ───────────────────────────────────────── */
+    #casos-de-uso { background: var(--bg2); }
+
+    .cases-header { max-width: 620px; }
+
+    .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+
+    .case-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: border-color .25s, transform .25s;
+    }
+    .case-card:hover {
+      border-color: rgba(6,182,212,0.3);
+      transform: translateY(-3px);
+    }
+    .case-icon { font-size: 2rem; margin-bottom: 1rem; }
+    .case-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .case-card p  { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+    .case-tag {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      background: rgba(6,182,212,0.1);
+      border: 1px solid rgba(6,182,212,0.2);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+    }
+
+    /* ── CTA ─────────────────────────────────────────────── */
+    #contato {
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    #contato .section-title { max-width: 600px; margin: 0 auto 1rem; }
+    #contato .section-sub   { margin: 0 auto 2.5rem; }
+
+    .email-box {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 480px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .email-box input {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.875rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color .2s;
+      font-family: inherit;
+    }
+    .email-box input::placeholder { color: var(--faint); }
+    .email-box input:focus { border-color: var(--accent); }
+    .email-box button {
+      padding: 0.875rem 1.75rem;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .2s, transform .2s;
+    }
+    .email-box button:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    .contact-note {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--faint);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      padding: 2rem clamp(1.5rem, 5vw, 4rem);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-logo {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .footer-logo span { color: var(--accent2); }
+    footer p { font-size: 0.8rem; color: var(--faint); }
+
+    /* ── SCROLL ANIMATIONS ───────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="index.html">
+      <img class="nav-logo-img" src="Para o site - horizontal.png" alt="FullCorpus AI" />
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Início</a></li>
+      <li><a href="sobre.html">O que é a FullCorpus AI</a></li>
+      <li><a href="software.html">Software</a></li>
+      <li><a href="servicos.html">Serviços</a></li>
+      <li><a href="equipe.html">Equipe</a></li>
+      <li><a href="historia.html">História</a></li>
+      <li><a href="contato.html">Contato</a></li>
+    </ul>
+    <div class="lang-switcher">
+      <span class="lang-active"><img src="assets/flags/br.svg" alt="PT" width="22" style="border-radius:2px;vertical-align:middle;"></span>
+      <a href="en/index.html" class="lang-link"><img src="assets/flags/us.svg" alt="EN" width="22" style="border-radius:2px;vertical-align:middle;"></a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-inner">
+      <div class="hero-logo-col">
+        <img class="hero-logo" src="fullcorpus_ai_transparente_alta.png" alt="FullCorpus AI" />
+      </div>
+      <div class="hero-content">
+        <div class="badge">Ferramenta de IA para pesquisa em escala</div>
+        <h1>
+          Analise centenas de documentos<br/>
+          com <span class="grad">precisão e velocidade.</span>
+        </h1>
+      </div>
+    </div>
+  </section>
+
+  <!-- LLM STRIP -->
+  <div class="llm-strip">
+    <p>Compatível com os principais LLMs</p>
+    <div class="llm-logos">
+      <div class="llm-pill"><span class="dot dot-gpt"></span> GPT</div>
+      <div class="llm-pill"><span class="dot dot-gem"></span> Gemini</div>
+      <div class="llm-pill"><span class="dot dot-cla"></span> Claude</div>
+    </div>
+  </div>
+
+
+  <!-- USE CASES -->
+  <section id="casos-de-uso">
+    <div class="cases-header reveal">
+      <p class="section-label">Casos de uso</p>
+      <h2 class="section-title">Desenvolvido para revisões,<br/>adaptado a qualquer análise</h2>
+      <p class="section-sub">
+        Originalmente criado para revisões sistemáticas,
+        o FullCorpus AI se adapta a qualquer fluxo de análise documental —
+        da auditoria à pesquisa qualitativa.
+      </p>
+    </div>
+    <div class="cases-grid reveal">
+      <div class="case-card">
+        <div class="case-icon">🔬</div>
+        <h3>Revisões Sistemáticas</h3>
+        <p>Pré-análise, extração e síntese de evidências em corpus de centenas de artigos, com rastreabilidade total do processo.</p>
+        <span class="case-tag">Pesquisa científica</span>
+      </div>
+      <div class="case-card">
+        <div class="case-icon">🎙️</div>
+        <h3>Análise de Entrevistas</h3>
+        <p>Codificação e categorização de entrevistas qualitativas com critérios definidos pelo pesquisador, processadas em lote.</p>
+        <span class="case-tag">Pesquisa qualitativa</span>
+      </div>
+      <div class="case-card">
+        <div class="case-icon">🗃️</div>
+        <h3>Análise Documental Diversa</h3>
+        <p>Extração de dados estruturados de documentos institucionais, relatórios, formulários e acervos em qualquer escala.</p>
+        <span class="case-tag">Análise documental</span>
+      </div>
+      <div class="case-card">
+        <div class="case-icon">🔍</div>
+        <h3>Crosscheck de Adequação</h3>
+        <p>Verificação de correspondência entre o conteúdo produzido e os documentos originais do corpus — garantindo fidelidade e cobertura.</p>
+        <span class="case-tag">Verificação</span>
+      </div>
+      <div class="case-card">
+        <div class="case-icon">📄</div>
+        <h3>Crosscheck de Plágio</h3>
+        <p>Identificação de riscos de similaridade textual e adequação de citações em relação às fontes originais.</p>
+        <span class="case-tag">Auditoria</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="como-funciona">
+    <div class="reveal">
+      <p class="section-label">Como funciona</p>
+      <h2 class="section-title">Do corpus à análise em<br/>poucos passos</h2>
+      <p class="section-sub">
+        FullCorpus AI orquestra LLMs de ponta para processar,
+        classificar e sintetizar documentos em escala — de forma
+        estruturada e reproduzível.
+      </p>
+    </div>
+    <div class="steps-grid reveal">
+      <!-- Linha 1 -->
+      <div class="steps-row">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;height:180px;overflow:hidden;margin-bottom:1.25rem;">
+            <img src="Base de dados em PDF2.png" alt="Corpus de documentos" style="width:100%;height:100%;object-fit:cover;display:block;" />
+          </div>
+          <h3>Corpus de documentos</h3>
+          <p>PDFs organizados em pasta — artigos, entrevistas, relatórios ou qualquer corpus documental.</p>
+        </div>
+        <div class="step-arrow" style="font-size:2.5rem;">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;height:180px;overflow:hidden;margin-bottom:1.25rem;">
+            <img src="Dados Extraídos - captura de tela.png" alt="Extração pelo software" style="width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.4);transform-origin:center center;" />
+          </div>
+          <h3>O software extrai os dados e tabulamos</h3>
+          <p>Os LLMs analisam cada documento individualmente, com os mesmos critérios, e os dados são tabulados automaticamente.</p>
+        </div>
+      </div>
+      <!-- Seta para baixo -->
+      <div class="step-arrow-down" style="font-size:2.5rem;">↓</div>
+      <!-- Linha 2 -->
+      <div class="steps-row">
+        <div class="step">
+          <div class="step-num">03</div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;height:180px;overflow:hidden;margin-bottom:1.25rem;">
+            <img src="imagem 3 - .png" alt="Relatório com clusterizações" style="width:100%;height:100%;object-fit:cover;display:block;" />
+          </div>
+          <h3>Relatório com clusterizações e meta-análises</h3>
+          <p>Os resultados são consolidados em relatório estruturado com agrupamentos, sínteses e meta-análises dos achados.</p>
+        </div>
+        <div class="step-arrow" style="font-size:2.5rem;">→</div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;height:180px;overflow:hidden;margin-bottom:1.25rem;">
+            <img src="Relatório P&amp;A.png" alt="Relatório de plágio e adequação" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;" />
+          </div>
+          <h3>Relatórios de análise de plágio e adequação nas citações</h3>
+          <p>Verificação de similaridade textual e adequação das citações em relação às fontes originais do corpus.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEMPO -->
+  <section style="padding:5rem clamp(1.5rem,5vw,4rem);border-top:1px solid var(--border);">
+    <div class="reveal" style="padding:2.5rem 3rem;background:rgba(6,182,212,0.05);border:1px solid rgba(6,182,212,0.18);border-radius:20px;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <p class="section-label">Tempo</p>
+        <h2 class="section-title">Quanto tempo<br/>demora cada análise?</h2>
+      </div>
+      <p style="color:var(--muted);font-size:clamp(1.1rem,1.8vw,1.35rem);margin:0;line-height:1.8;max-width:480px;">
+        Depende da quantidade de pontos a serem analisados. Porém, uma média que percebemos é de <strong style="color:var(--text);">cerca de 1 hora para cada 100 documentos</strong>.
+      </p>
+    </div>
+  </section>
+
+  <!-- CONFIABILIDADE -->
+  <section style="background:var(--bg2);border-top:1px solid var(--border);padding:6rem clamp(1.5rem,5vw,4rem);">
+    <div class="reveal" style="display:grid;grid-template-columns:repeat(2,1fr);gap:3rem 4rem;align-items:start;">
+      <div>
+        <p class="section-label">Desempenho</p>
+        <h2 class="section-title">Qual é a confiabilidade<br/>da ferramenta?</h2>
+        <p class="section-sub" style="margin-top:0.75rem;">
+          Conforme nossos testes, a extração de dados atinge desempenho próximo de 100% de acerto — superior à leitura manual em exaustividade e consistência. Erros ainda são possíveis, e por isso cada análise é rastreável e revisável. A confiabilidade é reforçada pelas análises de cross-checking de adequação, que verificam a correspondência entre o que foi extraído e os documentos originais.
+        </p>
+      </div>
+      <div>
+        <p class="section-label">Confiabilidade</p>
+        <h2 class="section-title">Não reinventamos<br/>a roda.</h2>
+        <p class="section-sub" style="margin-top:0.75rem;">
+          O FullCorpus AI não é uma IA e nem uma LLM. É um software que automatiza o uso de LLMs (GPT, Gemini e Claude). Por isso, sua confiabilidade é compatível com a de modelos de alto esforço e raciocínio.
+        </p>
+      </div>
+      <div>
+        <p class="section-label">Nosso diferencial</p>
+        <h2 class="section-title">Rigor e<br/>exaustividade.</h2>
+        <p class="section-sub" style="margin-top:0.75rem;">
+          Os dados não são misturados em massa — cada documento é analisado <strong style="color:var(--text);">individualmente</strong>, com os mesmos critérios aplicados um a um - e geram um documento único de análise. É como executar o mesmo prompt para cada documento, em um modelo de altíssimo esforço de raciocínio.
+        </p>
+      </div>
+      <div>
+        <p class="section-label">Aplicação</p>
+        <h2 class="section-title">Em que etapa<br/>é válido?</h2>
+        <p class="section-sub" style="margin-top:0.75rem;">
+          Indicamos como uma etapa de <strong style="color:var(--text);">pré-análise dos dados</strong> — uma rodada inicial de análise, muitas vezes também de simulação de possíveis resultados e achados. Ainda se faz necessária a revisão e a análise por parte dos pesquisadores.
+        </p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-top:4rem;">
+      <div class="feat-card reveal">
+        <div class="feat-icon">🏢</div>
+        <h4>APIs de Big Tech, não modelos próprios</h4>
+        <p>Utilizamos as APIs de desenvolvedor do GPT, Gemini e Claude — com maior capacidade de contexto e desempenho do que as interfaces de chat.</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-icon">✅</div>
+        <h4>Superior a chatbots em exaustividade</h4>
+        <p>Enquanto chatbots respondem uma pergunta por vez, o FullCorpus AI aplica os mesmos critérios a centenas de documentos com fidelidade e consistência.</p>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-icon">⚠️</div>
+        <h4>Ainda é IA: revisão recomendada</h4>
+        <p>Erros podem ocorrer. Por isso cada análise é documentada e revisável — a rastreabilidade é parte do processo, não um extra.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOFTWARE vs ORGANIZAÇÃO -->
+  <section style="padding: 6rem clamp(1.5rem, 5vw, 4rem); background: var(--bg2);">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 3rem; max-width: 1100px; margin: 0 auto;" id="funcionalidades">
+
+      <div class="reveal" style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:2.5rem;">
+        <p class="section-label">O software</p>
+        <h3 style="font-size:1.4rem;font-weight:800;margin-bottom:1rem;">FullCorpus AI Software</h3>
+        <p style="font-size:0.9rem;color:var(--muted);line-height:1.7;margin-bottom:1.5rem;">
+          Automatiza a análise documental em escala usando GPT, Gemini e Claude —
+          extração de dados, planilhas e relatórios, sem programação.
+        </p>
+        <ul class="features-list">
+          <li class="feature-item"><div class="feature-icon">⚡</div><div><h4>Processamento em massa</h4><p>Centenas de documentos com os mesmos critérios, de forma padronizada.</p></div></li>
+          <li class="feature-item"><div class="feature-icon">📋</div><div><h4>Extração e planilhas</h4><p>Dados extraídos e organizados automaticamente em planilha dinâmica.</p></div></li>
+          <li class="feature-item"><div class="feature-icon">📄</div><div><h4>Relatórios de análise</h4><p>Resultados exportáveis, prontos para uso acadêmico ou institucional.</p></div></li>
+        </ul>
+      </div>
+
+      <div class="reveal" style="background:var(--bg3);border:1px solid rgba(217,119,6,0.25);border-radius:16px;padding:2.5rem;">
+        <p class="section-label" style="color:#d97706;">A organização</p>
+        <h3 style="font-size:1.4rem;font-weight:800;margin-bottom:1rem;">FullCorpus AI Serviços</h3>
+        <p style="font-size:0.9rem;color:var(--muted);line-height:1.7;margin-bottom:1.5rem;">
+          A FullCorpus AI vai além do seu software autoral. Para muitas das nossas atividades é viável utilizar outros softwares, rodar análises ou auditorias em outras LLMs. Dessa forma, envolvem serviços de aconselhamento e assessoria à pesquisa além do software, tais como:
+        </p>
+        <ul class="features-list">
+          <li class="feature-item"><div class="feature-icon" style="background:rgba(217,119,6,0.12);border-color:rgba(217,119,6,0.2);">🔍</div><div><h4>Crosscheck de adequação</h4><p>Verificação de correspondência entre o que foi produzido e os documentos originais.</p></div></li>
+          <li class="feature-item"><div class="feature-icon" style="background:rgba(217,119,6,0.12);border-color:rgba(217,119,6,0.2);">📄</div><div><h4>Crosscheck de plágio</h4><p>Identificação de riscos de similaridade textual e adequação de citações.</p></div></li>
+          <li class="feature-item"><div class="feature-icon" style="background:rgba(217,119,6,0.12);border-color:rgba(217,119,6,0.2);">🧭</div><div><h4>Design e assessoria de pesquisa</h4><p>Estruturação metodológica, prompts, dados e suporte à divulgação dos resultados.</p></div></li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA / NAVEGAÇÃO FINAL -->
+  <section id="contato" style="text-align:center;">
+    <div class="cta-glow"></div>
+    <div class="reveal" style="position:relative;">
+      <p class="section-label" style="justify-content:center;">Explore mais</p>
+      <h2 class="section-title">Por onde você quer continuar?</h2>
+    </div>
+    <div class="reveal" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;max-width:680px;margin:2.5rem auto 0;">
+      <a href="software.html" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:1.4rem 1.75rem;border-radius:6px;font-size:1rem;font-weight:600;background:var(--bg3);border:1px solid rgba(59,130,246,0.35);color:#fff;text-decoration:none;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(59,130,246,0.7)';this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='rgba(59,130,246,0.35)';this.style.transform='none'">
+        Conheça o software <span style="color:var(--accent);">→</span>
+      </a>
+      <a href="servicos.html" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:1.4rem 1.75rem;border-radius:6px;font-size:1rem;font-weight:600;background:var(--bg3);border:1px solid rgba(59,130,246,0.35);color:#fff;text-decoration:none;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(59,130,246,0.7)';this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='rgba(59,130,246,0.35)';this.style.transform='none'">
+        Conheça os serviços <span style="color:var(--accent);">→</span>
+      </a>
+      <a href="equipe.html" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:1.4rem 1.75rem;border-radius:6px;font-size:1rem;font-weight:600;background:var(--bg3);border:1px solid rgba(59,130,246,0.35);color:#fff;text-decoration:none;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(59,130,246,0.7)';this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='rgba(59,130,246,0.35)';this.style.transform='none'">
+        Conheça a equipe <span style="color:var(--accent);">→</span>
+      </a>
+      <a href="historia.html" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:1.4rem 1.75rem;border-radius:6px;font-size:1rem;font-weight:600;background:var(--bg3);border:1px solid rgba(59,130,246,0.35);color:#fff;text-decoration:none;transition:border-color .2s,transform .2s;" onmouseover="this.style.borderColor='rgba(59,130,246,0.7)';this.style.transform='scale(1.02)'" onmouseout="this.style.borderColor='rgba(59,130,246,0.35)';this.style.transform='none'">
+        Conheça a história <span style="color:var(--accent);">→</span>
+      </a>
+      <a href="contato.html" style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:1.6rem 1.75rem;border-radius:6px;font-size:1.05rem;font-weight:700;background:#d97706;border:none;color:#fff;text-decoration:none;box-shadow:0 0 32px rgba(217,119,6,0.35);transition:opacity .2s,transform .2s;" onmouseover="this.style.opacity='0.88';this.style.transform='scale(1.02)'" onmouseout="this.style.opacity='1';this.style.transform='none'">
+        Entre em contato conosco →
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo"><span>Full</span>Corpus AI</div>
+    <nav style="position:static;background:none;border:none;height:auto;padding:0;display:flex;gap:1.5rem;flex-wrap:wrap;">
+      <a href="servicos.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Serviços</a>
+      <a href="software.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Software</a>
+      <a href="equipe.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Equipe</a>
+      <a href="historia.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">História</a>
+      <a href="contato.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Contato</a>
+    </nav>
+    <p>© 2026 FullCorpus AI · fullcorpusai.com.br</p>
+  </footer>
+
+  <script>
+    // scroll reveal
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+      }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // email CTA
+    document.querySelector('.email-box button').addEventListener('click', () => {
+      const val = document.querySelector('.email-box input').value.trim();
+      if (!val || !val.includes('@')) { alert('Por favor, insira um e-mail válido.'); return; }
+      alert('Obrigado! Entraremos em contato em breve.');
+      document.querySelector('.email-box input').value = '';
+    });
+
+    // grid responsive fix for features section
+    const featSection = document.getElementById('funcionalidades');
+    function checkWidth() {
+      if (window.innerWidth < 768) {
+        featSection.style.gridTemplateColumns = '1fr';
+        featSection.style.gap = '2.5rem';
+      } else {
+        featSection.style.gridTemplateColumns = '1fr 1fr';
+        featSection.style.gap = '4rem';
+      }
+    }
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+  </script>
+</body>
+</html>

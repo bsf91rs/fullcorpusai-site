@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Services — FullCorpus AI</title>
+  <meta name="description" content="Discover FullCorpus AI services: large-scale corpus analysis, systematic reviews, structured extraction, and much more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../shared.css" />
+  <style>
+    /* ── SERVICES GRID ─────────────────────────────────────── */
+    #services { padding: 7rem clamp(1.5rem,5vw,4rem) 7rem; }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 4rem;
+    }
+
+    .service-card {
+      background: linear-gradient(145deg, var(--bg3), var(--bg4));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 2.25rem;
+      transition: border-color .3s, transform .3s, box-shadow .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .service-card:hover {
+      border-color: rgba(59,130,246,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .service-card:hover::before { opacity: 1; }
+
+    .service-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .service-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.65rem;
+      letter-spacing: -0.02em;
+    }
+    .service-card p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+    .service-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .service-bullets li {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+    .service-bullets li::before {
+      content: '→';
+      color: var(--accent2);
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    /* ── AUDIENCES ─────────────────────────────────────────── */
+    #audience {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+    }
+    .audience-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .audience-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+    }
+    .audience-card .aud-icon { font-size: 2.25rem; margin-bottom: 1rem; }
+    .audience-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .audience-card p  { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── CTA ─────────────────────────────────────────────────── */
+    #cta-services {
+      text-align: center;
+      padding: 6rem clamp(1.5rem,5vw,4rem);
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+    }
+    .cta-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    #cta-services .section-title { max-width: 540px; margin: 0 auto 1rem; }
+    #cta-services .section-sub   { margin: 0 auto 2.5rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <img class="nav-logo-img" src="../Para o site - horizontal.png" alt="FullCorpus AI" />
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">What is FullCorpus AI</a></li>
+    <li><a href="software.html">Software</a></li>
+    <li><a href="services.html" class="active">Services</a></li>
+    <li><a href="team.html">Team</a></li>
+    <li><a href="story.html">Story</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="lang-switcher">
+    <a href="../servicos.html" class="lang-link"><img src="../assets/flags/br.svg" alt="PT" width="22" style="border-radius:2px;vertical-align:middle;"></a>
+    <span class="lang-active"><img src="../assets/flags/us.svg" alt="EN" width="22" style="border-radius:2px;vertical-align:middle;"></span>
+  </div>
+</nav>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="reveal" style="max-width:700px;">
+    <p class="section-label">What we offer</p>
+    <h2 class="section-title">Document analysis<br/>that scales with you.</h2>
+    <p class="section-sub">
+      Beyond large-scale analysis — with rigor, depth, exhaustiveness, and speed —
+      we offer verification and advisory services conducted directly by our team.
+    </p>
+  </div>
+
+  <!-- LARGE-SCALE ANALYSIS -->
+  <div style="margin-top:4rem;">
+    <p class="section-label" style="color:var(--accent);">Large-scale analysis</p>
+    <div class="services-grid" style="margin-top:1.5rem;">
+
+      <div class="service-card reveal">
+        <div class="service-icon">🔬</div>
+        <h3>Systematic Reviews</h3>
+        <p>Pre-analysis, extraction, and synthesis of evidence from corpora of hundreds of articles, with full traceability.</p>
+      </div>
+
+      <div class="service-card reveal reveal-delay-1">
+        <div class="service-icon">🎙️</div>
+        <h3>Interview Analysis</h3>
+        <p>Categorization, coding, and synthesis of qualitative transcripts at scale, with researcher-defined criteria.</p>
+      </div>
+
+      <div class="service-card reveal reveal-delay-2">
+        <div class="service-icon">🗂️</div>
+        <h3>Diverse Document Analysis</h3>
+        <p>Extraction and organization of data from institutional documents, reports, forms, and archives of any nature.</p>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-icon">📚</div>
+        <h3>Large-Scale Corpus Analysis</h3>
+        <p>Processing of dozens to hundreds of documents with the same criteria, model, and traceability.</p>
+      </div>
+
+      <div class="service-card reveal reveal-delay-1">
+        <div class="service-icon">🔁</div>
+        <h3>Multi-Model Analysis</h3>
+        <p>Running the same analysis with GPT, Gemini, and Claude in parallel for validation and result comparison.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TEAM SERVICES -->
+  <div style="margin-top:5rem;">
+    <p class="section-label" style="color:var(--accent2);">Team services</p>
+    <p style="font-size:0.9rem;color:var(--muted);max-width:620px;margin-top:0.5rem;margin-bottom:1.5rem;line-height:1.7;">
+      The team directly conducts verification analyses and provides advisory for research design, execution, and dissemination.
+    </p>
+    <div class="services-grid">
+
+      <div class="service-card reveal" style="border-color:rgba(6,182,212,0.18);">
+        <div class="service-icon" style="background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.2);">🗂️</div>
+        <h3>Title and Abstract Screening</h3>
+        <p>Selection and filtering of articles by titles, abstracts, and keywords — essential for systematic reviews with large reference volumes.</p>
+      </div>
+
+      <div class="service-card reveal reveal-delay-1" style="border-color:rgba(6,182,212,0.18);">
+        <div class="service-icon" style="background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.2);">🔍</div>
+        <h3>Adequacy Crosscheck</h3>
+        <p>Verification of correspondence between what was produced by the analysis and the original corpus documents — ensuring fidelity and coverage.</p>
+      </div>
+
+      <div class="service-card reveal reveal-delay-1" style="border-color:rgba(6,182,212,0.18);">
+        <div class="service-icon" style="background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.2);">📄</div>
+        <h3>Plagiarism Crosscheck</h3>
+        <p>Identification of textual similarity risks, paraphrase adequacy, and citation accuracy in relation to original sources.</p>
+      </div>
+
+      <div class="service-card reveal reveal-delay-2" style="border-color:rgba(6,182,212,0.18);">
+        <div class="service-icon" style="background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.2);">🧭</div>
+        <h3>Research Design and Conduct</h3>
+        <p>Advisory for methodological structuring of the analysis — defining criteria, categories, variables, and analytical workflow.</p>
+      </div>
+
+      <div class="service-card reveal" style="border-color:rgba(6,182,212,0.18);">
+        <div class="service-icon" style="background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.2);">⚙️</div>
+        <h3>Prompts, Data, and Dissemination</h3>
+        <p>Prompt development, data organization and categorization, and support for preparing results for dissemination.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- AUDIENCES -->
+<section id="audience">
+  <div class="reveal" style="max-width:600px;">
+    <p class="section-label">Who it's for</p>
+    <h2 class="section-title">Built for those who<br/>deal with volume.</h2>
+  </div>
+  <div class="audience-grid reveal">
+    <div class="audience-card">
+      <div class="aud-icon">🎓</div>
+      <h4>Academic Researchers</h4>
+      <p>Master's and PhD students and researchers with thematic reviews or extensive corpus analyses.</p>
+    </div>
+    <div class="audience-card">
+      <div class="aud-icon">📊</div>
+      <h4>Data Scientists</h4>
+      <p>Professionals who need to structure large volumes of textual data with consistency and traceability.</p>
+    </div>
+    <div class="audience-card">
+      <div class="aud-icon">🏛️</div>
+      <h4>Research Institutes</h4>
+      <p>Organizations conducting applied research that require large-scale document analysis.</p>
+    </div>
+    <div class="audience-card">
+      <div class="aud-icon">💼</div>
+      <h4>Consultancies &amp; Companies</h4>
+      <p>Teams analyzing reports, contracts, interviews, or institutional documents in volume.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta-services">
+  <div class="cta-glow"></div>
+  <div class="reveal" style="position:relative;">
+    <p class="section-label" style="justify-content:center;">Let's talk</p>
+    <h2 class="section-title">Ready to scale<br/>your analysis?</h2>
+    <p class="section-sub">
+      Tell us about your corpus and your goals.
+      We will work together to structure the best approach.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a class="btn-primary" href="contact.html">Get in touch →</a>
+      <a class="btn-secondary" href="software.html">Explore the software</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo"><span>Full</span>Corpus AI</div>
+  <nav style="position:static;background:none;border:none;height:auto;padding:0;display:flex;gap:1.5rem;flex-wrap:wrap;">
+    <a href="index.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Home</a>
+    <a href="software.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Software</a>
+    <a href="team.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Team</a>
+    <a href="story.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Story</a>
+    <a href="contact.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Contact</a>
+  </nav>
+  <p>© 2026 FullCorpus AI · fullcorpusai.com.br</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

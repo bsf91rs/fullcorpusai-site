@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Equipe — FullCorpus AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    /* ── TEAM SECTION ─────────────────────────────────────── */
+    #equipe { padding: 5rem clamp(1.5rem,5vw,4rem) 7rem; }
+
+    /* ── LAYOUT FUNDADOR (Bernardo) ─────────────────────── */
+    .founder-layout {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      max-width: 920px;
+      margin: 3.5rem auto 0;
+    }
+
+    .founder-photo-box {
+      width: 300px;
+      height: 400px;
+      flex-shrink: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .founder-photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 15%;
+      display: block;
+      transition: transform .4s ease;
+    }
+    .founder-photo-box:hover img { transform: scale(1.04); }
+
+    .founder-text-box {
+      flex: 1;
+      background: linear-gradient(145deg, var(--bg3), var(--bg4));
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: border-color .3s, box-shadow .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .founder-text-box:hover {
+      border-color: rgba(59,130,246,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .founder-text-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .founder-text-box:hover::before { opacity: 1; }
+
+    @media (max-width: 700px) {
+      .founder-layout { flex-direction: column; }
+      .founder-photo-box { width: 100%; height: 320px; }
+    }
+
+    /* ── CARD SECUNDÁRIO (Otávio) ────────────────────────── */
+    .team-secondary-label {
+      max-width: 920px;
+      margin: 3.5rem auto 1rem;
+    }
+
+    .team-card-secondary {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      max-width: 920px;
+      margin: 0 auto;
+      background: linear-gradient(145deg, var(--bg3), var(--bg4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color .3s, box-shadow .3s;
+      position: relative;
+    }
+    .team-card-secondary:hover {
+      border-color: rgba(59,130,246,0.2);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+
+    .secondary-photo-area {
+      width: 160px;
+      height: 160px;
+      flex-shrink: 0;
+      position: relative;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg3);
+    }
+    .secondary-photo-area .member-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 15%;
+      display: block;
+    }
+
+    @media (max-width: 600px) {
+      .team-card-secondary { flex-direction: column; }
+      .secondary-photo-area { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+
+    .card-body { padding: 2rem; }
+    .card-body-sm { padding: 1.25rem 1.5rem; }
+
+    .member-role {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 0.5rem;
+    }
+
+    .member-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+
+    .member-title {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .member-bio {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .member-bio p + p { margin-top: 0.75rem; }
+
+    .member-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .member-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.18);
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+    }
+
+    .member-links {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .member-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 7px;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .member-link:hover { transform: translateY(-1px); }
+    .member-link.primary {
+      color: #fff;
+      background: var(--accent);
+    }
+    .member-link.primary:hover { background: #2563eb; }
+    .member-link.secondary {
+      color: var(--muted);
+      border: 1px solid var(--border2);
+      background: var(--glass);
+    }
+    .member-link.secondary:hover {
+      color: var(--text);
+      border-color: rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* ── ORIGIN SECTION ──────────────────────────────────── */
+    #origem {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+    }
+    .origin-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+    @media (max-width: 900px) { .origin-content { grid-template-columns: 1fr; gap: 2.5rem; } }
+
+    .origin-text .section-sub { margin-top: 0.75rem; }
+    .origin-quote {
+      margin-top: 2rem;
+      padding: 1.5rem 1.75rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent2);
+      border-radius: 0 12px 12px 0;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.75;
+      font-style: italic;
+    }
+    .origin-quote cite {
+      display: block;
+      margin-top: 0.75rem;
+      font-size: 0.78rem;
+      font-style: normal;
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    .origin-visual {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .origin-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .origin-card-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .origin-card strong { font-size: 0.875rem; font-weight: 600; display: block; margin-bottom: 0.2rem; }
+    .origin-card span { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── CONTACT CTA ─────────────────────────────────────── */
+    #contato-equipe {
+      text-align: center;
+      padding: 6rem clamp(1.5rem,5vw,4rem);
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.09) 0%, transparent 65%);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    #contato-equipe .section-title { max-width: 500px; margin: 0 auto 1rem; }
+    #contato-equipe .section-sub { margin: 0 auto 2.5rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">
+    <img class="nav-logo-img" src="Para o site - horizontal.png" alt="FullCorpus AI" />
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Início</a></li>
+      <li><a href="sobre.html">O que é a FullCorpus AI</a></li>
+    <li><a href="software.html">Software</a></li>
+    <li><a href="servicos.html">Serviços</a></li>
+    <li><a href="equipe.html" class="active">Equipe</a></li>
+    <li><a href="historia.html">História</a></li>
+    <li><a href="contato.html">Contato</a></li>
+  </ul>
+  <div class="lang-switcher">
+    <span class="lang-active"><img src="assets/flags/br.svg" alt="PT" width="22" style="border-radius:2px;vertical-align:middle;"></span>
+    <a href="en/team.html" class="lang-link"><img src="assets/flags/us.svg" alt="EN" width="22" style="border-radius:2px;vertical-align:middle;"></a>
+  </div>
+</nav>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-bg"></div>
+  <div class="page-hero-grid"></div>
+  <div class="page-hero-content">
+    <p class="section-label">Equipe</p>
+    <h1>As pessoas por trás <span class="grad">do FullCorpus AI.</span></h1>
+  </div>
+</div>
+
+<!-- TEAM -->
+<section id="equipe">
+  <!-- BERNARDO — duas caixas lado a lado -->
+  <div class="founder-layout reveal">
+    <div class="founder-photo-box">
+      <img src="Bernardo.jpeg" alt="Bernardo Soares Fernandes" />
+    </div>
+    <div class="founder-text-box card-body">
+      <div class="member-role">Idealizador · Fundador · Co-desenvolvedor</div>
+      <h2 class="member-name">Bernardo Fernandes</h2>
+      <div class="member-bio">
+        <p>
+          Doutor em Administração (UFRGS) na área de concentração em Inovação, Tecnologia e Sustentabilidade, com período como pesquisador visitante na IÉSEG School of Management (Campus Paris).
+        </p>
+        <p>Possui Pós-Doutorado em Inteligência Artificial e Healthtechs (HCPA/Capes).</p>
+        <p>Orientador Acadêmico do Programa ALI (Agentes Locais de Inovação) do Sebrae/DF.</p>
+        <p>
+          Já atuou em múltiplos projetos de desenvolvimento tecnológico, lançamento de produtos e customização de IAG.<br/>
+          10+ em Gestão de Projetos e Gestão da Inovação (intraempreendedorismo e startups).
+        </p>
+      </div>
+      <div class="member-tags">
+        <span class="member-tag">IA Generativa</span>
+        <span class="member-tag">Inovação</span>
+        <span class="member-tag">Análise Documental</span>
+        <span class="member-tag">Gestão de Projetos</span>
+        <span class="member-tag">Startups</span>
+        <span class="member-tag">Healthtechs</span>
+      </div>
+      <div class="member-links">
+        <a class="member-link primary" href="mailto:fernandes.bernardo.soares@gmail.com">✉ Contato</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTÁVIO — co-desenvolvedor técnico -->
+  <div class="team-secondary-label reveal">
+    <p class="section-label" style="margin-top:0;">Co-desenvolvimento técnico</p>
+  </div>
+  <div class="founder-layout reveal">
+    <div class="founder-photo-box">
+      <img src="WhatsApp%20Image%202026-06-29%20at%2002.37.39.jpeg" alt="Otávio Oliveira" />
+    </div>
+    <div class="founder-text-box card-body">
+      <div class="member-role">Desenvolvedor · Co-desenvolvedor</div>
+      <h2 class="member-name">Otávio</h2>
+      <p class="member-title">Graduado em Informática Biomédica — UFCSPA</p>
+      <div class="member-bio">
+        <p>
+          Desenvolvedor com formação em Informática Biomédica pela Universidade Federal de
+          Ciências da Saúde de Porto Alegre (UFCSPA). Com experiência anterior em inteligência
+          artificial, Otávio é o co-desenvolvedor da primeira e atual versão do software FullCorpus AI.
+        </p>
+        <p>
+          Sua contribuição foi essencial para transformar as customizações iniciais de IA generativa
+          em uma ferramenta funcional, capaz de processar documentos em escala com consistência
+          e estrutura de saída definida.
+        </p>
+      </div>
+      <div class="member-tags">
+        <span class="member-tag">Inteligência Artificial</span>
+        <span class="member-tag">Informática Biomédica</span>
+        <span class="member-tag">Ciência de Dados</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT CTA -->
+<section id="contato-equipe">
+  <div class="cta-glow"></div>
+  <div class="reveal" style="position:relative;">
+    <p class="section-label" style="justify-content:center;">Fale com a equipe</p>
+    <h2 class="section-title">Tem perguntas<br/>sobre o projeto?</h2>
+    <p class="section-sub">
+      Estamos abertos a conversas sobre parcerias, colaborações acadêmicas e acesso antecipado.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a class="btn-primary" href="mailto:fernandes.bernardo.soares@gmail.com">✉ Entrar em contato</a>
+      <a class="btn-secondary" href="index.html#contato">Solicitar acesso</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo"><span>Full</span>Corpus AI</div>
+  <nav style="position:static;background:none;border:none;height:auto;padding:0;display:flex;gap:1.5rem;flex-wrap:wrap;">
+    <a href="index.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Início</a>
+    <a href="servicos.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Serviços</a>
+    <a href="software.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Software</a>
+    <a href="historia.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">História</a>
+    <a href="contato.html" style="font-size:0.78rem;color:var(--faint);text-decoration:none;">Contato</a>
+  </nav>
+  <p>© 2026 FullCorpus AI · fullcorpusai.com.br</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
