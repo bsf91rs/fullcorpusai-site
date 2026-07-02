@@ -104,31 +104,32 @@ nav {
 @media (max-width: 768px) {
   nav {
     height: auto;
+    flex-direction: row;
     flex-wrap: wrap;
-    padding: 0.6rem clamp(1rem, 4vw, 2rem);
-    gap: 0;
     align-items: center;
+    padding: 0.5rem clamp(0.75rem, 4vw, 1.5rem);
+    gap: 0.35rem;
   }
-  .nav-logo { flex-shrink: 0; }
+  .nav-logo { display: none; }
   .nav-cta { display: none; }
+  .nav-mobile-toggle { display: none; }
   .nav-links {
-    display: none;
-    flex-direction: column;
-    width: 100%;
-    padding: 0.5rem 0 0.5rem;
-    border-top: 1px solid var(--border);
-    margin-top: 0.5rem;
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 0.6rem;
     list-style: none;
-    gap: 0;
+    padding: 0;
+    margin: 0;
   }
   .nav-links a {
-    font-size: 0.9rem;
-    display: block;
-    padding: 0.65rem 0.25rem;
-    border-bottom: 1px solid var(--border);
+    font-size: 0.7rem;
+    padding: 0.2rem 0;
+    display: inline;
+    border-bottom: none;
   }
-  nav.nav-open .nav-links { display: flex; }
-  .nav-mobile-toggle { display: flex; align-items: center; }
+  .nav-item-about { display: none !important; }
+  .lang-switcher { margin-left: 0.5rem; }
 }
 
 /* ── MOBILE GRID OVERRIDES ───────────────────────────── */
@@ -144,6 +145,7 @@ nav {
   .steps-grid {
     grid-template-columns: 1fr !important;
   }
+  .step-arrow { transform: rotate(90deg); }
   .section-title {
     letter-spacing: -0.01em;
   }

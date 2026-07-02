@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="fullcorpus_ai_transparente_alta.png" type="image/png">
   <title>História — FullCorpus AI</title>
   <meta name="description" content="Como nasceu o FullCorpus AI — a história de uma frustração de pesquisador que virou ferramenta." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -192,6 +193,11 @@
     }
     #cta-historia .section-title { max-width: 500px; margin: 0 auto 1rem; }
     #cta-historia .section-sub   { margin: 0 auto 2.5rem; }
+
+    /* ── PAGE HERO MOBILE FIX ───────────────────────────────── */
+    @media (max-width: 768px) {
+      .page-hero { padding-top: 80px !important; }
+    }
   </style>
 </head>
 <body>
@@ -203,7 +209,7 @@
   <button class="nav-mobile-toggle" aria-label="Menu" onclick="this.closest('nav').classList.toggle('nav-open')">☰</button>
   <ul class="nav-links">
     <li><a href="index.html">Início</a></li>
-      <li><a href="sobre.html">O que é a FullCorpus AI</a></li>
+      <li class="nav-item-about"><a href="sobre.html">O que é a FullCorpus AI</a></li>
     <li><a href="software.html">Software</a></li>
     <li><a href="servicos.html">Serviços</a></li>
     <li><a href="equipe.html">Equipe</a></li>
