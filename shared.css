@@ -91,6 +91,8 @@ nav {
 }
 .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
 
+.nav-tree-mobile { display: none; }
+
 .nav-mobile-toggle {
   display: none;
   background: none;
@@ -113,23 +115,25 @@ nav {
   .nav-logo { display: none; }
   .nav-cta { display: none; }
   .nav-mobile-toggle { display: none; }
+  .nav-tree-mobile { display: block; height: 20px; width: auto; flex-shrink: 0; margin-right: 0.25rem; }
   .nav-links {
     display: flex !important;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0 0.6rem;
+    flex-wrap: nowrap;
+    gap: 0 0.5rem;
     list-style: none;
     padding: 0;
     margin: 0;
   }
   .nav-links a {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     padding: 0.2rem 0;
     display: inline;
     border-bottom: none;
+    white-space: nowrap;
   }
   .nav-item-about { display: none !important; }
-  .lang-switcher { margin-left: 0.5rem; }
+  .lang-switcher { margin-left: 0.35rem; }
 }
 
 /* ── MOBILE PAGE HERO SPACING ───────────────────────── */

@@ -127,11 +127,12 @@
       .nav-logo { display: none; }
       .nav-cta { display: none; }
       .nav-mobile-toggle { display: none !important; }
+      .nav-tree-mobile { display: block; height: 20px; width: auto; flex-shrink: 0; margin-right: 0.25rem; }
       .nav-links {
         display: flex !important;
         flex-direction: row;
-        flex-wrap: wrap;
-        gap: 0 0.6rem;
+        flex-wrap: nowrap;
+        gap: 0 0.5rem;
         padding: 0;
         margin: 0;
         width: auto;
@@ -139,10 +140,11 @@
         margin-top: 0;
       }
       .nav-links a {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         display: inline;
         padding: 0.2rem 0;
         border-bottom: none;
+        white-space: nowrap;
       }
       .nav-item-about { display: none !important; }
     }
@@ -670,6 +672,7 @@
     <a class="nav-logo" href="index.html">
       <img class="nav-logo-img" src="Para o site - horizontal.png" alt="FullCorpus AI" />
     </a>
+    <img class="nav-tree-mobile" src="fullcorpus_ai_transparente_alta.png" alt="">
     <ul class="nav-links">
       <li><a href="index.html" class="active">Início</a></li>
       <li class="nav-item-about"><a href="sobre.html">O que é a FullCorpus AI</a></li>
