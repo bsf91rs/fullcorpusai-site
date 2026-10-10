@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Na minha mão não esquenta</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+  body { font-family: "Inter", "DejaVu Sans", sans-serif; }
+  #stage { position: absolute; inset: 0; width: 1080px; height: 1920px; background: #FFE8C2; overflow: hidden; }
+  .scene { position: absolute; left: 0; top: 0; width: 1080px; height: 1450px; opacity: 0; }
+  svg.scene { display: block; }
+  .char .m-open, .char .e-laugh, .char .m-sad { display: none; }
+  .char.talk .m-open { display: inline; }
+  .char.talk .m-closed { display: none; }
+  .char.laugh .e-open { display: none; }
+  .char.laugh .e-laugh, .char.laugh .m-open { display: inline; }
+  .char.laugh .m-closed { display: none; }
+  .char.sad .m-closed, .char.sad .m-open { display: none; }
+  .char.sad .m-sad { display: inline; }
+
+  #capbox { position: absolute; left: 50px; right: 50px; top: 1490px; height: 340px;
+            display: flex; align-items: center; justify-content: center; text-align: center; }
+  #cap { font-weight: 800; font-size: 60px; line-height: 1.18; color: #1d1d1f; letter-spacing: -0.5px; }
+  #cap.punch { font-size: 66px; color: #1d1d1f; }
+  #cap .hl { background: #FFD23F; padding: 0 10px; border-radius: 10px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  #capbg { position: absolute; left: 0; right: 0; top: 1450px; bottom: 0; background: #FFFFFF; }
+
+  .bubble { position: absolute; background: #fff; border: 6px solid #1d1d1f; border-radius: 44px;
+            padding: 30px 38px; font-weight: 800; font-size: 50px; line-height: 1.2; color: #1d1d1f;
+            opacity: 0; transform-origin: 50% 100%; box-shadow: 0 10px 0 rgba(0,0,0,.12); }
+  .bubble::after { content: ""; position: absolute; bottom: -40px; width: 0; height: 0;
+            border-left: 26px solid transparent; border-right: 26px solid transparent; border-top: 40px solid #1d1d1f; }
+  .bubble.tail-l::after { left: 90px; }
+  .bubble.tail-r::after { right: 90px; }
+  .bubble.tail-c::after { left: calc(50% - 26px); }
+
+  #end { position: absolute; inset: 0; background: #1d1d1f; opacity: 0; display: flex; flex-direction: column;
+         align-items: center; justify-content: center; text-align: center; padding: 0 80px; }
+  #end h1 { color: #fff; font-size: 104px; font-weight: 900; line-height: 1.08; letter-spacing: -2px; }
+  #end h1 span { color: #FFD23F; }
+  #end .tag { margin-top: 70px; color: #FFD23F; font-size: 48px; font-weight: 800; }
+  #end .ai { position: absolute; bottom: 70px; left: 0; right: 0; color: #9a9aa0; font-size: 30px; font-weight: 500; }
+  #progress { position: absolute; left: 0; bottom: 0; height: 10px; background: #E4572E; width: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="capbg"></div>
+  <div id="scenes"></div>
+  <div id="bubbles"></div>
+  <div id="capbox"><div id="cap"></div></div>
+  <div id="end">
+    <h1>Sem povo com renda,<br>não tem empresa.<br><span>Nem país.</span></h1>
+    <div class="tag">Dinheiro que circula é dinheiro que trabalha.</div>
+    <div class="ai">Animação produzida com auxílio de inteligência artificial</div>
+  </div>
+  <div id="progress"></div>
+</div>
+
+<script>
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const backOut = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const win = (t, a, b, f = .35) => Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b));
+const $ = id => document.getElementById(id);
+const setT = (id, x, y, s = 1, r = 0) => { const e = $(id); if (e) e.setAttribute('transform', `translate(${x} ${y}) rotate(${r}) scale(${s})`); };
+const setO = (id, o) => { const e = $(id); if (e) e.style.opacity = o; };
+const talking = (t) => Math.floor(t * 8) % 2 === 0;
+const setMood = (id, mood) => { const e = $(id); if (!e) return; e.classList.remove('talk', 'laugh', 'sad'); if (mood) e.classList.add(mood); };
+const pop = (id, t, a, b, cx, cy, base = 1) => { // scale-pop group around (cx,cy)
+  const p = prog(t, a, a + .35), o = win(t, a, b, .25);
+  const s = base * (b === Infinity ? backOut(p) : backOut(p));
+  const e = $(id); if (!e) return;
+  e.setAttribute('transform', `translate(${cx} ${cy}) scale(${Math.max(0.001, s)}) translate(${-cx} ${-cy})`);
+  e.style.opacity = o;
+};
+
+// ---------- characters (200 x 300 box, feet at y≈290) ----------
+function rosa(id, pote = true) { return `<g id="${id}" class="char">
+  <rect x="80" y="250" width="16" height="42" rx="7" fill="#5a3a22"/><rect x="104" y="250" width="16" height="42" rx="7" fill="#5a3a22"/>
+  <ellipse cx="88" cy="292" rx="14" ry="6" fill="#2B1B12"/><ellipse cx="112" cy="292" rx="14" ry="6" fill="#2B1B12"/>
+  <path d="M62 140 Q100 122 138 140 L158 262 Q100 276 42 262 Z" fill="#E4572E"/>
+  <path d="M76 168 L124 168 L131 252 Q100 260 69 252 Z" fill="#FFF4E0"/>
+  <path d="M84 168 Q100 180 116 168" stroke="#E4572E" stroke-width="4" fill="none"/>
+  <rect x="34" y="144" width="22" height="74" rx="11" fill="#8D5524" transform="rotate(14 45 150)"/>
+  <rect x="144" y="144" width="22" height="74" rx="11" fill="#8D5524" transform="rotate(-14 155 150)"/>
+  <path d="M60 140 Q46 150 40 170" stroke="#E4572E" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <path d="M140 140 Q154 150 160 170" stroke="#E4572E" stroke-width="22" stroke-linecap="round" fill="none"/>
+  ${pote ? `<g transform="translate(150 196)"><rect x="0" y="0" width="34" height="40" rx="6" fill="#F7E6C4" stroke="#C99A6B" stroke-width="3"/><rect x="0" y="10" width="34" height="10" fill="#7B3F1E"/><rect x="0" y="24" width="34" height="8" fill="#F2B5C4"/><rect x="-2" y="-6" width="38" height="8" rx="3" fill="#E4572E"/></g>` : ''}
+  <rect x="90" y="112" width="20" height="24" rx="6" fill="#7a4a20"/>
+  <circle cx="72" cy="52" r="20" fill="#2B1B12"/><circle cx="128" cy="52" r="20" fill="#2B1B12"/><circle cx="100" cy="34" r="26" fill="#2B1B12"/>
+  <circle cx="60" cy="74" r="14" fill="#2B1B12"/><circle cx="140" cy="74" r="14" fill="#2B1B12"/>
+  <circle cx="100" cy="80" r="42" fill="#8D5524"/>
+  <path d="M58 76 Q62 40 100 40 Q138 40 142 76 Q126 56 100 56 Q74 56 58 76Z" fill="#2B1B12"/>
+  <path d="M62 60 Q100 34 138 60" stroke="#F2C14E" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <g transform="translate(138 48)"><circle r="8" cx="0" cy="-9" fill="#FF8FB1"/><circle r="8" cx="9" cy="0" fill="#FF8FB1"/><circle r="8" cx="0" cy="9" fill="#FF8FB1"/><circle r="8" cx="-9" cy="0" fill="#FF8FB1"/><circle r="6" fill="#FFD23F"/></g>
+  <circle cx="58" cy="92" r="5" fill="#F2C14E"/><circle cx="142" cy="92" r="5" fill="#F2C14E"/>
+  <g class="e-open"><ellipse cx="85" cy="80" rx="4.5" ry="6" fill="#2B1B12"/><ellipse cx="115" cy="80" rx="4.5" ry="6" fill="#2B1B12"/></g>
+  <g class="e-laugh" stroke="#2B1B12" stroke-width="4" fill="none" stroke-linecap="round"><path d="M79 82 Q85 74 91 82"/><path d="M109 82 Q115 74 121 82"/></g>
+  <path d="M78 70 Q85 66 92 70 M108 70 Q115 66 122 70" stroke="#2B1B12" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="74" cy="96" r="7" fill="#E07A5F" opacity=".55"/><circle cx="126" cy="96" r="7" fill="#E07A5F" opacity=".55"/>
+  <path class="m-closed" d="M88 100 Q100 111 112 100" stroke="#3b1d10" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g class="m-open"><path d="M85 97 Q100 122 115 97 Z" fill="#5c1a1a"/><path d="M92 110 Q100 116 108 110 Q100 106 92 110Z" fill="#E86A6A"/></g>
+  <path class="m-sad" d="M88 106 Q100 97 112 106" stroke="#3b1d10" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>`; }
+
+function jorge(id) { return `<g id="${id}" class="char">
+  <rect x="78" y="250" width="18" height="42" rx="7" fill="#3d3d55"/><rect x="104" y="250" width="18" height="42" rx="7" fill="#3d3d55"/>
+  <ellipse cx="86" cy="292" rx="15" ry="6" fill="#222"/><ellipse cx="114" cy="292" rx="15" ry="6" fill="#222"/>
+  <path d="M56 142 Q100 124 144 142 L150 258 L50 258 Z" fill="#FFFFFF" stroke="#ddd" stroke-width="2"/>
+  <path d="M70 150 L130 150 L136 258 L64 258 Z" fill="#2E9E5B"/>
+  <text x="100" y="205" font-size="15" font-weight="800" fill="#fff" text-anchor="middle" font-family="Inter">JORGE</text>
+  <rect x="30" y="146" width="24" height="76" rx="12" fill="#C68642" transform="rotate(10 42 150)"/>
+  <rect x="146" y="146" width="24" height="76" rx="12" fill="#C68642" transform="rotate(-10 158 150)"/>
+  <path d="M58 142 Q44 150 38 172" stroke="#fff" stroke-width="24" stroke-linecap="round" fill="none"/>
+  <path d="M142 142 Q156 150 162 172" stroke="#fff" stroke-width="24" stroke-linecap="round" fill="none"/>
+  <rect x="90" y="112" width="20" height="24" rx="6" fill="#a86e35"/>
+  <circle cx="100" cy="80" r="42" fill="#C68642"/>
+  <path d="M58 82 Q56 58 66 50 L70 80Z M142 82 Q144 58 134 50 L130 80Z" fill="#9a9a9a"/>
+  <ellipse cx="58" cy="84" rx="7" ry="10" fill="#b5773b"/><ellipse cx="142" cy="84" rx="7" ry="10" fill="#b5773b"/>
+  <g class="e-open"><ellipse cx="85" cy="78" rx="4.5" ry="6" fill="#222"/><ellipse cx="115" cy="78" rx="4.5" ry="6" fill="#222"/></g>
+  <g class="e-laugh" stroke="#222" stroke-width="4" fill="none" stroke-linecap="round"><path d="M79 80 Q85 72 91 80"/><path d="M109 80 Q115 72 121 80"/></g>
+  <path d="M76 66 L92 64 M108 64 L124 66" stroke="#555" stroke-width="5" stroke-linecap="round"/>
+  <path d="M80 98 Q90 88 100 94 Q110 88 120 98 Q110 102 100 99 Q90 102 80 98Z" fill="#444"/>
+  <path class="m-closed" d="M90 106 Q100 114 110 106" stroke="#5a2d0c" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g class="m-open"><path d="M88 104 Q100 124 112 104 Z" fill="#5c1a1a"/></g>
+  <path class="m-sad" d="M88 112 Q100 103 112 112" stroke="#5a2d0c" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>`; }
+
+function filho(id) { return `<g id="${id}" class="char">
+  <rect x="80" y="250" width="17" height="42" rx="7" fill="#2f4b7c"/><rect x="103" y="250" width="17" height="42" rx="7" fill="#2f4b7c"/>
+  <ellipse cx="88" cy="292" rx="14" ry="6" fill="#fff" stroke="#999" stroke-width="2"/><ellipse cx="112" cy="292" rx="14" ry="6" fill="#fff" stroke="#999" stroke-width="2"/>
+  <path d="M58 142 Q100 126 142 142 L146 256 L54 256 Z" fill="#FFC93C"/>
+  <text x="100" y="200" font-size="16" font-weight="800" fill="#7a5a00" text-anchor="middle" font-family="Inter">LOJA</text>
+  <rect x="32" y="146" width="22" height="74" rx="11" fill="#8D5524" transform="rotate(10 43 150)"/>
+  <rect x="146" y="140" width="22" height="64" rx="11" fill="#8D5524" transform="rotate(-40 157 146)"/>
+  <rect x="168" y="150" width="24" height="40" rx="5" fill="#222"/><rect x="171" y="154" width="18" height="30" rx="3" fill="#6fd3ff"/>
+  <path d="M60 142 Q46 150 40 172" stroke="#FFC93C" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <rect x="90" y="112" width="20" height="24" rx="6" fill="#7a4a20"/>
+  <circle cx="100" cy="80" r="40" fill="#8D5524"/>
+  <path d="M60 70 Q62 36 100 36 Q138 36 140 70 Z" fill="#2b6cb0"/><rect x="56" y="62" width="88" height="12" rx="6" fill="#2b6cb0"/>
+  <path d="M136 66 Q166 66 170 76 L138 76Z" fill="#1f4f85"/>
+  <g class="e-open"><ellipse cx="86" cy="84" rx="4.5" ry="6" fill="#2B1B12"/><ellipse cx="114" cy="84" rx="4.5" ry="6" fill="#2B1B12"/></g>
+  <g class="e-laugh" stroke="#2B1B12" stroke-width="4" fill="none" stroke-linecap="round"><path d="M80 86 Q86 78 92 86"/><path d="M108 86 Q114 78 120 86"/></g>
+  <path class="m-closed" d="M90 102 Q100 110 110 102" stroke="#3b1d10" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g class="m-open"><path d="M88 100 Q100 120 112 100 Z" fill="#5c1a1a"/></g>
+  <path class="m-sad" d="M88 108 Q100 99 112 108" stroke="#3b1d10" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>`; }
+
+function rico(id, label = '') { return `<g id="${id}" class="char">
+  <rect x="80" y="250" width="17" height="42" rx="7" fill="#1b2340"/><rect x="103" y="250" width="17" height="42" rx="7" fill="#1b2340"/>
+  <ellipse cx="88" cy="292" rx="15" ry="6" fill="#000"/><ellipse cx="112" cy="292" rx="15" ry="6" fill="#000"/>
+  <path d="M54 142 Q100 124 146 142 L152 258 L48 258 Z" fill="#1F2A4D"/>
+  <path d="M86 136 L100 176 L114 136 Z" fill="#fff"/><path d="M96 142 L104 142 L106 196 L100 206 L94 196 Z" fill="#D7263D"/>
+  <path d="M86 136 L100 176 L78 160Z M114 136 L100 176 L122 160Z" fill="#162040"/>
+  <rect x="30" y="146" width="24" height="76" rx="12" fill="#1F2A4D" transform="rotate(10 42 150)"/>
+  <rect x="146" y="146" width="24" height="76" rx="12" fill="#1F2A4D" transform="rotate(-10 158 150)"/>
+  <circle cx="36" cy="222" r="11" fill="#F1C27D"/><circle cx="166" cy="222" r="11" fill="#F1C27D"/>
+  <rect x="160" y="208" width="18" height="10" rx="3" fill="#F2C14E"/>
+  ${label ? `<rect x="54" y="214" width="92" height="30" rx="8" fill="#FFD23F"/><text x="100" y="236" font-size="18" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">${label}</text>` : ''}
+  <rect x="90" y="112" width="20" height="24" rx="6" fill="#dca866"/>
+  <circle cx="100" cy="80" r="42" fill="#F1C27D"/>
+  <path d="M58 74 Q60 34 104 36 Q142 38 142 70 Q120 50 90 54 Q70 56 58 74Z" fill="#B0B0B8"/>
+  <rect x="72" y="70" width="24" height="16" rx="6" fill="#111"/><rect x="104" y="70" width="24" height="16" rx="6" fill="#111"/><rect x="94" y="74" width="12" height="4" fill="#111"/>
+  <g class="e-open"></g><g class="e-laugh"></g>
+  <path class="m-closed" d="M86 104 Q104 112 116 98" stroke="#7a3f12" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g class="m-open"><ellipse cx="100" cy="106" rx="12" ry="14" fill="#5c1a1a"/></g>
+  <path class="m-sad" d="M88 108 Q100 99 112 108" stroke="#7a3f12" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>`; }
+
+function coin(id, sleepy = false) { return `<g id="${id}">
+  <circle r="34" fill="#F5C518" stroke="#C99A06" stroke-width="6"/><circle r="24" fill="none" stroke="#E0B000" stroke-width="3"/>
+  ${sleepy ? `<path d="M-14 -4 Q-9 0 -4 -4 M4 -4 Q9 0 14 -4" stroke="#5a4300" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
+           : `<ellipse cx="-9" cy="-6" rx="4" ry="5.5" fill="#3a2a00"/><ellipse cx="9" cy="-6" rx="4" ry="5.5" fill="#3a2a00"/>`}
+  <path d="M-8 8 Q0 14 8 8" stroke="#3a2a00" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+</g>`; }
+
+function note(id, label = 'R$ 1.000') { return `<g id="${id}">
+  <rect x="-80" y="-40" width="160" height="80" rx="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="5"/>
+  <circle cx="-48" cy="0" r="20" fill="#81C784"/>
+  <text x="18" y="12" font-size="30" font-weight="900" fill="#fff" text-anchor="middle" font-family="Inter">${label}</text>
+</g>`; }
+
+function shop(id, x, y, w, h, name, color) { return `<g id="${id}">
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#fff" stroke="#1d1d1f" stroke-width="5"/>
+  <path d="M${x - 8} ${y + 4} h${w + 16} l-10 46 h-${w - 4} z" fill="${color}" stroke="#1d1d1f" stroke-width="5"/>
+  ${[0, 1, 2, 3].map(i => `<rect x="${x + 4 + i * (w - 8) / 4}" y="${y + 6}" width="${(w - 8) / 8}" height="40" fill="#fff" opacity=".45"/>`).join('')}
+  <text x="${x + w / 2}" y="${y - 14}" font-size="26" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">${name}</text>
+  <rect id="${id}-win" x="${x + 16}" y="${y + 70}" width="${w * .42}" height="${h * .38}" rx="6" fill="#cfd8dc" stroke="#1d1d1f" stroke-width="4"/>
+  <rect x="${x + w * .62}" y="${y + 70}" width="${w * .26}" height="${h - 70}" rx="4" fill="#8d6e63" stroke="#1d1d1f" stroke-width="4"/>
+</g>`; }
+
+function house(id, x, y, color) { return `<g id="${id}">
+  <rect x="${x}" y="${y + 70}" width="150" height="150" fill="${color}" stroke="#1d1d1f" stroke-width="5"/>
+  <path d="M${x - 14} ${y + 74} L${x + 75} ${y} L${x + 164} ${y + 74} Z" fill="#B23A48" stroke="#1d1d1f" stroke-width="5" stroke-linejoin="round"/>
+  <rect id="${id}-win" x="${x + 22}" y="${y + 104}" width="48" height="48" rx="4" fill="#37474f" stroke="#1d1d1f" stroke-width="4"/>
+  <rect x="${x + 90}" y="${y + 130}" width="40" height="90" rx="4" fill="#6d4c41" stroke="#1d1d1f" stroke-width="4"/>
+</g>`; }
+
+// ---------- scene markup ----------
+const S = $('scenes');
+S.innerHTML = `
+<!-- S1: hook -->
+<svg id="s1" class="scene" viewBox="0 0 1080 1450">
+  <rect width="1080" height="1450" fill="#FFE8C2"/>
+  <circle cx="540" cy="900" r="430" fill="#FFD9A0"/>
+  <g id="s1-rosa-pos">${rosa('s1-rosa')}</g>
+  <g id="s1-note">${note('s1-note-in')}</g>
+</svg>
+
+<!-- S2: one to one -->
+<svg id="s2" class="scene" viewBox="0 0 1080 1450">
+  <rect width="1080" height="722" fill="#FFE8C2"/>
+  <rect y="728" width="1080" height="722" fill="#DCE6F2"/>
+  <rect y="718" width="1080" height="14" fill="#1d1d1f"/>
+  <rect x="34" y="34" width="290" height="64" rx="32" fill="#E4572E"/><text x="179" y="78" font-size="34" font-weight="900" fill="#fff" text-anchor="middle" font-family="Inter">DONA ROSA</text>
+  <rect x="34" y="762" width="290" height="64" rx="32" fill="#1F2A4D"/><text x="179" y="806" font-size="34" font-weight="900" fill="#fff" text-anchor="middle" font-family="Inter">BILIONÁRIO</text>
+  <rect y="640" width="1080" height="80" fill="#F4C98B"/>
+  ${shop('sh1', 352, 400, 158, 240, 'Mercadinho', '#2E9E5B')}
+  ${shop('sh2', 530, 400, 158, 240, 'Gás', '#2b6cb0')}
+  ${shop('sh3', 708, 400, 158, 240, 'Tênis', '#8e44ad')}
+  ${shop('sh4', 886, 400, 158, 240, 'Salão', '#E4572E')}
+  ${[1, 2, 3, 4].map(i => `<g id="plim${i}"><rect x="${352 + (i - 1) * 178 + 14}" y="300" width="130" height="58" rx="29" fill="#FFD23F" stroke="#1d1d1f" stroke-width="4"/><text x="${352 + (i - 1) * 178 + 79}" y="340" font-size="32" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">plim!</text></g>`).join('')}
+  <g id="s2-rosa-pos">${rosa('s2-rosa')}</g>
+  <g id="s2-coin">${coin('s2-coin-in')}</g>
+  <g id="s2-note-a">${note('s2-na')}</g>
+
+  <rect y="1370" width="1080" height="80" fill="#AFC3DA"/>
+  <g id="pile">
+    <ellipse cx="790" cy="1330" rx="230" ry="70" fill="#2E7D32"/>
+    <path d="M580 1330 Q600 1150 790 1110 Q980 1150 1000 1330 Z" fill="#4CAF50" stroke="#2E7D32" stroke-width="6"/>
+    ${Array.from({ length: 9 }, (_, i) => `<rect x="${620 + (i % 3) * 110 + (i > 5 ? 50 : 0)}" y="${1290 - Math.floor(i / 3) * 70}" width="100" height="44" rx="6" fill="#66BB6A" stroke="#2E7D32" stroke-width="4" transform="rotate(${(i * 37) % 20 - 10} ${670 + (i % 3) * 110} ${1310 - Math.floor(i / 3) * 70})"/>`).join('')}
+    <text x="790" y="1250" font-size="44" font-weight="900" fill="#fff" text-anchor="middle" font-family="Inter" opacity=".9">APLICAÇÃO</text>
+  </g>
+  <g id="s2-coin2">${coin('s2-coin2-in', true)}</g>
+  <g id="zzz" font-family="Inter" font-weight="900" fill="#1F2A4D">
+    <text id="z1" font-size="44">Z</text><text id="z2" font-size="56">Z</text><text id="z3" font-size="70">Z</text>
+  </g>
+  <g id="s2-rico-pos">${rico('s2-rico')}</g>
+  <g id="s2-note-b">${note('s2-nb')}</g>
+</svg>
+
+<!-- S3: neighborhood -->
+<svg id="s3" class="scene" viewBox="0 0 1080 1450">
+  <rect id="s3-sky" width="1080" height="1450" fill="#BFE3F5"/>
+  <rect id="s3-dusk" width="1080" height="1450" fill="#2c2f4a" opacity="0"/>
+  <rect y="1040" width="1080" height="410" fill="#8FCB6B"/>
+  <rect y="1040" width="1080" height="70" fill="#9e9e9e"/>
+  ${house('h1', 30, 820, '#FFE082')}
+  ${house('h2', 200, 860, '#B3E5FC')}
+  ${house('h3', 720, 860, '#F8BBD0')}
+  ${house('h4', 900, 820, '#C5E1A5')}
+  <g>
+    <rect x="380" y="690" width="320" height="350" fill="#fff" stroke="#1d1d1f" stroke-width="6"/>
+    <path d="M366 700 h348 l-14 70 h-320 z" fill="#2E9E5B" stroke="#1d1d1f" stroke-width="6"/>
+    <rect x="380" y="620" width="320" height="70" rx="10" fill="#1d1d1f"/>
+    <text x="540" y="668" font-size="38" font-weight="900" fill="#FFD23F" text-anchor="middle" font-family="Inter">MERCADINHO</text>
+    <rect id="st-win" x="402" y="800" width="130" height="130" rx="6" fill="#37474f" stroke="#1d1d1f" stroke-width="5"/>
+    <rect x="552" y="800" width="128" height="240" fill="#6d4c41" stroke="#1d1d1f" stroke-width="5"/>
+    <rect id="st-door" x="552" y="800" width="128" height="0" fill="#9aa5ad" stroke="#1d1d1f" stroke-width="5"/>
+    <g id="st-door-lines"></g>
+  </g>
+  <g id="contrata"><rect x="402" y="945" width="130" height="70" rx="8" fill="#FFD23F" stroke="#1d1d1f" stroke-width="4"/><text x="467" y="975" font-size="18" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">CONTRATA-</text><text x="467" y="1000" font-size="18" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">SE!</text></g>
+  <g id="passa"><rect x="420" y="560" width="240" height="96" rx="10" fill="#fff" stroke="#D7263D" stroke-width="6" transform="rotate(-6 540 608)"/><text x="540" y="602" font-size="30" font-weight="900" fill="#D7263D" text-anchor="middle" font-family="Inter" transform="rotate(-6 540 608)">PASSA-SE</text><text x="540" y="638" font-size="30" font-weight="900" fill="#D7263D" text-anchor="middle" font-family="Inter" transform="rotate(-6 540 608)">O PONTO</text></g>
+  <g id="s3-jorge-pos">${jorge('s3-jorge')}</g>
+  <g id="rain">${Array.from({ length: 14 }, (_, i) => `<g id="rc${i}">${coin('rc' + i + 'in')}</g>`).join('')}</g>
+  <g id="tv">
+    <rect x="200" y="70" width="680" height="430" rx="26" fill="#1d1d1f"/>
+    <rect x="226" y="96" width="628" height="350" rx="12" fill="#0e3b2b"/>
+    <path id="tv-line" d="M260 400 L340 370 L400 385 L480 320 L540 335 L620 250 L690 265 L800 150" stroke="#3DDC84" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="540" y="160" font-size="54" font-weight="900" fill="#3DDC84" text-anchor="middle" font-family="Inter">BOLSA SOBE ▲</text>
+    <text x="540" y="482" font-size="28" font-weight="800" fill="#fff" text-anchor="middle" font-family="Inter">“O MERCADO ESTÁ ANIMADO!”</text>
+    ${Array.from({ length: 24 }, (_, i) => `<rect id="cf${i}" width="14" height="22" rx="3" fill="${['#FFD23F', '#E4572E', '#3DDC84', '#6fd3ff', '#FF8FB1'][i % 5]}"/>`).join('')}
+  </g>
+</svg>
+
+<!-- S4: kitchen dialogue -->
+<svg id="s4" class="scene" viewBox="0 0 1080 1450">
+  <rect width="1080" height="1450" fill="#F6D7B0"/>
+  <rect y="0" width="1080" height="1450" fill="url(#tiles)" opacity=".25"/>
+  <defs><pattern id="tiles" width="90" height="90" patternUnits="userSpaceOnUse"><rect width="88" height="88" fill="none" stroke="#c9a77e" stroke-width="3"/></pattern></defs>
+  <rect x="380" y="380" width="320" height="220" rx="10" fill="#bfe3f5" stroke="#1d1d1f" stroke-width="6"/><path d="M540 380 V600 M380 490 H700" stroke="#1d1d1f" stroke-width="6"/>
+  <rect y="1200" width="1080" height="250" fill="#c98b55"/>
+  <g id="s4-rosa-pos">${rosa('s4-rosa', false)}</g>
+  <g id="s4-filho-pos">${filho('s4-filho')}</g>
+  <rect x="300" y="1130" width="480" height="40" rx="10" fill="#8d5a33"/><rect x="330" y="1170" width="24" height="200" fill="#6d4426"/><rect x="726" y="1170" width="24" height="200" fill="#6d4426"/>
+  <g transform="translate(470 1090)"><ellipse cx="0" cy="40" rx="70" ry="16" fill="#fff" stroke="#1d1d1f" stroke-width="4"/><ellipse cx="0" cy="32" rx="44" ry="10" fill="#e9c46a"/></g>
+  <g transform="translate(620 1070)"><rect x="-22" y="0" width="44" height="60" rx="8" fill="#e0f2f1" stroke="#1d1d1f" stroke-width="4"/></g>
+</svg>
+
+<!-- S4b: fallacy diagram -->
+<svg id="s4b" class="scene" viewBox="0 0 1080 1450">
+  <rect width="1080" height="1450" fill="#EEF2F7"/>
+  <rect x="40" y="40" width="1000" height="110" rx="55" fill="#1d1d1f"/>
+  <text x="540" y="113" font-size="52" font-weight="900" fill="#FFD23F" text-anchor="middle" font-family="Inter">FALÁCIA DO EU-EMPRESÁRIO</text>
+  <g id="s4b-rico-pos">${rico('s4b-rico', 'PATRÃO')}</g>
+  <g id="s4b-filho-pos">${filho('s4b-filho')}</g>
+  <g id="bag"><path d="M-70 -40 Q-90 70 0 80 Q90 70 70 -40 Z" fill="#c8a165" stroke="#1d1d1f" stroke-width="5"/><path d="M-40 -40 L-26 -70 L26 -70 L40 -40Z" fill="#b48a4f" stroke="#1d1d1f" stroke-width="5"/><text y="18" font-size="24" font-weight="900" text-anchor="middle" fill="#1d1d1f" font-family="Inter">MENOS</text><text y="46" font-size="24" font-weight="900" text-anchor="middle" fill="#1d1d1f" font-family="Inter">IMPOSTO</text></g>
+  <path id="uturn" d="M420 600 C 600 640, 720 760, 700 880 C 680 990, 520 980, 470 880 C 430 800, 420 720, 340 700" stroke="#D7263D" stroke-width="12" fill="none" stroke-dasharray="26 18" stroke-linecap="round"/>
+  <path id="uturn-head" d="M0 0 L32 -18 L28 18 Z" fill="#D7263D"/>
+  <g id="s4b-coin">${coin('s4b-coin-in')}</g>
+  <g id="tag1"><rect x="60" y="250" width="270" height="70" rx="35" fill="#fff" stroke="#1d1d1f" stroke-width="4"/><text x="195" y="297" font-size="32" font-weight="800" text-anchor="middle" font-family="Inter">🚗 Carro novo</text></g>
+  <g id="tag2"><rect x="370" y="250" width="270" height="70" rx="35" fill="#fff" stroke="#1d1d1f" stroke-width="4"/><text x="505" y="297" font-size="32" font-weight="800" text-anchor="middle" font-family="Inter">📈 Aplicação</text></g>
+  <g id="tag3"><rect x="680" y="250" width="340" height="70" rx="35" fill="#fff" stroke="#1d1d1f" stroke-width="4"/><text x="850" y="297" font-size="32" font-weight="800" text-anchor="middle" font-family="Inter">✈️ Conta lá fora</text></g>
+  <g id="holerite"><rect x="620" y="1160" width="400" height="190" rx="14" fill="#fff" stroke="#1d1d1f" stroke-width="5"/><text x="820" y="1215" font-size="30" font-weight="900" text-anchor="middle" font-family="Inter">CONTRACHEQUE</text><text x="820" y="1270" font-size="30" font-weight="700" text-anchor="middle" font-family="Inter" fill="#555">Salário:</text><text x="820" y="1320" font-size="40" font-weight="900" text-anchor="middle" font-family="Inter" fill="#D7263D">o mesmo 😐</text></g>
+</svg>
+
+<!-- S5: public services -->
+<svg id="s5" class="scene" viewBox="0 0 1080 1450">
+  <rect width="1080" height="1450" fill="#EAF0F6"/>
+  <g transform="translate(540 260)">
+    <path d="M-110 -50 Q-140 110 0 120 Q140 110 110 -50 Z" fill="#4CAF50" stroke="#1d1d1f" stroke-width="6"/>
+    <path d="M-60 -50 L-40 -100 L40 -100 L60 -50Z" fill="#43a047" stroke="#1d1d1f" stroke-width="6"/>
+    <text y="50" font-size="70" font-weight="900" fill="#fff" text-anchor="middle" font-family="Inter">R$</text>
+    <g id="lock" transform="translate(90 70)"><rect x="-44" y="-10" width="88" height="70" rx="10" fill="#FFD23F" stroke="#1d1d1f" stroke-width="5"/><path d="M-26 -10 V-34 Q-26 -60 0 -60 Q26 -60 26 -34 V-10" stroke="#1d1d1f" stroke-width="10" fill="none"/></g>
+  </g>
+  <text x="540" y="470" font-size="40" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">DINHEIRO TRAVADO LÁ EM CIMA</text>
+  ${[['SUS', '#D7263D', 'M-22 -60 h44 v38 h38 v44 h-38 v38 h-44 v-38 h-38 v-44 h38z'],
+     ['ESCOLA', '#2b6cb0', 'M-64 -40 L0 -70 L64 -40 L0 -10 Z M-44 -26 V30 Q0 56 44 30 V-26 L0 -6Z'],
+     ['SEGURANÇA', '#1F2A4D', 'M0 -70 L60 -46 V4 Q60 52 0 74 Q-60 52 -60 4 V-46Z']]
+    .map(([n, c, d], i) => `<g id="card${i}">
+      <rect x="${60 + i * 330}" y="620" width="300" height="420" rx="30" fill="#fff" stroke="#1d1d1f" stroke-width="6"/>
+      <g transform="translate(${210 + i * 330} 790)"><path d="${d}" fill="${c}"/></g>
+      <text x="${210 + i * 330}" y="960" font-size="${n.length > 7 ? 40 : 48}" font-weight="900" fill="#1d1d1f" text-anchor="middle" font-family="Inter">${n}</text>
+      <rect id="card${i}-grey" x="${60 + i * 330}" y="620" width="300" height="420" rx="30" fill="#7d7d85" opacity="0"/>
+      <path id="card${i}-crack" d="M${120 + i * 330} 640 l40 90 l-30 60 l60 80 l-20 70 l50 90" stroke="#1d1d1f" stroke-width="7" fill="none" opacity="0"/>
+    </g>`).join('')}
+</svg>
+
+<!-- S6: Rosa to camera -->
+<svg id="s6" class="scene" viewBox="0 0 1080 1450">
+  <rect width="1080" height="1450" fill="#FFE8C2"/>
+  <circle cx="540" cy="1150" r="520" fill="#FFD9A0"/>
+  <g id="s6-rosa-pos">${rosa('s6-rosa')}</g>
+</svg>
+`;
+
+// door slats
+$('st-door-lines').innerHTML = Array.from({ length: 10 }, (_, i) => `<line id="sl${i}" x1="556" x2="676" y1="${820 + i * 22}" y2="${820 + i * 22}" stroke="#6b757c" stroke-width="4"/>`).join('');
+
+// ---------- bubbles ----------
+const B = $('bubbles');
+const bubbles = [
+  { id: 'b1', a: 1.9, b: 6.0, x: 120, y: 170, w: 840, tail: 'c', html: 'Dinheiro na minha mão<br>não esquenta! 😂' },
+  { id: 'b2', a: 38.3, b: 42.6, x: 260, y: 110, w: 780, tail: 'r', html: 'Mãe, se o meu patrão pagar menos imposto, ele vai me pagar mais!' },
+  { id: 'b3', a: 42.8, b: 46.6, x: 40, y: 140, w: 760, tail: 'l', html: 'Ô, meu filho… e quando foi que <u>sobrou</u> pra você? 😂' },
+  { id: 'b4', a: 63.0, b: 68.4, x: 60, y: 80, w: 960, tail: 'c', html: 'Antes de votar, pergunta: esse dinheiro vai chegar na mão de quem gasta <u>no teu bairro</u>?' },
+  { id: 'b5', a: 68.6, b: 72.0, x: 110, y: 120, w: 860, tail: 'c', html: 'Porque na minha mão…<br><span style="color:#E4572E">não esquenta!</span> 😂' },
+];
+B.innerHTML = bubbles.map(b => `<div id="${b.id}" class="bubble tail-${b.tail}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px">${b.html}</div>`).join('');
+
+// ---------- captions ----------
+const caps = [
+  { a: 3.4, b: 6.0, html: 'E é assim que a economia funciona 👇' },
+  { a: 6.2, b: 9.8, html: 'R$ 1.000 pra Dona Rosa.<br>R$ 1.000 pra um bilionário.' },
+  { a: 9.8, b: 15.4, html: 'O dinheiro dela vira <span class="hl">salário de alguém</span>… que gasta de novo.' },
+  { a: 15.4, b: 18.6, html: 'O do bilionário vai pra aplicação… e <span class="hl">fica parado</span>.' },
+  { a: 18.6, b: 22.0, punch: 1, html: 'Na mão de quem precisa, o dinheiro <span class="hl">corre</span>.<br>Na mão de quem tem tudo, ele <span class="hl">para</span>.' },
+  { a: 22.2, b: 28.0, html: 'Põe dinheiro <span class="hl">embaixo</span>: o povo compra, o comércio vende e contrata.' },
+  { a: 28.0, b: 33.0, html: 'Põe só <span class="hl">em cima</span>: a bolsa sobe, todo mundo comemora…' },
+  { a: 33.0, b: 35.6, html: '…até o mercadinho fechar por falta de cliente.' },
+  { a: 35.6, b: 38.0, punch: 1, html: 'Sem consumidor,<br><span class="hl">não existe empresa.</span>' },
+  { a: 46.4, b: 51.8, html: 'O funcionário defende o que é bom pro patrão… achando que <span class="hl">vai sobrar pra ele</span>.' },
+  { a: 51.8, b: 57.0, html: 'Mas o desconto de cima quase nunca desce. E sem povo com renda, <span class="hl">o patrão também quebra</span>.' },
+  { a: 57.2, b: 62.6, html: 'Quando o dinheiro trava lá em cima, falta pro <span class="hl">SUS</span>, pra <span class="hl">escola</span> e pra <span class="hl">segurança</span>.' },
+];
+const capEl = $('cap'); let capCur = -1;
+
+// ---------- scenes timing ----------
+const SC = { s1: [0, 6.1], s2: [6.0, 22.1], s3: [22.0, 38.1], s4: [38.0, 46.7], s4b: [46.6, 57.1], s5: [57.0, 62.7], s6: [62.6, 72.2] };
+const END = [72.0, 78.0];
+const TOTAL = 78.0;
+const bgFor = t => t < 6 ? '#FFE8C2' : t < 22 ? '#FFE8C2' : t < 38 ? '#BFE3F5' : t < 46.6 ? '#F6D7B0' : t < 62.6 ? '#EAF0F6' : '#FFE8C2';
+
+function render(t) {
+  for (const [id, [a, b]] of Object.entries(SC)) setO(id, a === 0 ? 1 - prog(t, b - .3, b) : win(t, a, b, .3));
+  $('stage').style.background = bgFor(t);
+
+  // S1
+  if (t < 6.2) {
+    const p = ease(prog(t, 0, .7));
+    setT('s1-rosa-pos', lerp(-500, 240, p), 470, 3.0);
+    setMood('s1-rosa', t > 1.9 && t < 4.6 ? 'laugh' : null);
+    const np = ease(prog(t, .8, 1.6));
+    setT('s1-note', lerp(540, 790, np), lerp(-120, 1060, np), 1.3, lerp(-30, 10, np));
+    setO('s1-note', t > 1.9 ? 1 - prog(t, 1.9, 2.2) : 1);
+  }
+  // S2
+  if (t > 5.8 && t < 22.3) {
+    setT('s2-rosa-pos', 50, 300, 1.25);
+    setT('s2-rico-pos', 60, 1015, 1.25);
+    const na = ease(prog(t, 6.4, 7.3)); setT('s2-note-a', lerp(260, 230, na), lerp(-80, 560, na), .7);
+    setO('s2-note-a', 1 - prog(t, 8.6, 8.9));
+    const nb = ease(prog(t, 6.6, 7.5)); const fly = ease(prog(t, 9.2, 10.6));
+    setT('s2-note-b', lerp(lerp(260, 240, nb), 790, fly), lerp(lerp(700, 1280, nb), 1200, fly) + fly * 0, lerp(.7, .4, fly), fly * 40);
+    setO('s2-note-b', 1 - prog(t, 10.6, 11.2));
+    // coin hops Rosa -> shops
+    const stops = [[240, 560], [431, 560], [609, 560], [787, 560], [965, 560]];
+    let cx = stops[0][0], cy = stops[0][1];
+    const t0 = 8.6, hop = 1.25;
+    for (let i = 0; i < 4; i++) {
+      const ps = t0 + i * hop, p = ease(prog(t, ps, ps + .9));
+      if (t >= ps) { cx = lerp(stops[i][0], stops[i + 1][0], p); cy = lerp(stops[i][1], stops[i + 1][1], p) - Math.sin(p * Math.PI) * 170; }
+    }
+    setT('s2-coin', cx, cy, 1, (t - 8.6) * 220 * (t < 13.6 ? 1 : 0));
+    setO('s2-coin', prog(t, 8.5, 8.7));
+    for (let i = 0; i < 4; i++) {
+      const at = t0 + i * hop + .9;
+      pop('plim' + (i + 1), t, at, at + 1.1, 431 + i * 178, 329);
+      $('sh' + (i + 1) + '-win').setAttribute('fill', t > at ? '#FFE082' : '#cfd8dc');
+    }
+    setMood('s2-rosa', t > 7.3 && t < 8.6 ? 'laugh' : null);
+    // billionaire sleepy coin + zzz
+    setT('s2-coin2', 790, lerp(1080, 1120, prog(t, 10.4, 11)), 1.2);
+    setO('s2-coin2', prog(t, 10.6, 11.0));
+    const zt = Math.max(0, t - 11);
+    ['z1', 'z2', 'z3'].forEach((z, i) => {
+      const ph = ((zt * .6) + i / 3) % 1;
+      const e = $(z); e.setAttribute('x', 840 + ph * 90 + i * 10); e.setAttribute('y', 1040 - ph * 200); e.style.opacity = t > 11 ? Math.sin(ph * Math.PI) : 0;
+    });
+    setMood('s2-rico', (t > 11.5 && t < 13 ? 'talk' : null));
+  }
+  // S3
+  if (t > 21.8 && t < 38.3) {
+    setT('s3-jorge-pos', 730, 1030, 1.15);
+    for (let i = 0; i < 14; i++) {
+      const st = 22.4 + i * .22, p = prog(t, st, st + 1.0);
+      const x = [100, 270, 470, 600, 790, 970, 150, 330, 520, 640, 860, 1000, 60, 420][i];
+      const yEnd = [890, 930, 760, 760, 930, 890, 890, 930, 760, 760, 930, 890, 890, 760][i];
+      setT('rc' + i, x, lerp(-60, yEnd, ease(p)), .8);
+      setO('rc' + i, p > 0 ? 1 - prog(t, st + 1.0, st + 1.3) : 0);
+    }
+    const lightOn = i => t > 23.4 + i * .5, lightOff = i => t > 33.6 + i * .45;
+    ['h1', 'h2', 'h3', 'h4'].forEach((h, i) => $(h + '-win').setAttribute('fill', lightOn(i) && !lightOff(i) ? '#FFE082' : '#37474f'));
+    $('st-win').setAttribute('fill', t > 24 && t < 34.8 ? '#FFE082' : '#37474f');
+    pop('contrata', t, 25.4, 33.8, 467, 980);
+    setMood('s3-jorge', t > 34.8 ? 'sad' : (t > 25.4 && t < 28 ? 'laugh' : null));
+    // TV
+    const tvp = win(t, 28.0, 33.4, .4);
+    $('tv').style.opacity = tvp;
+    const ln = $('tv-line'); const L = 760; ln.setAttribute('stroke-dasharray', L); ln.setAttribute('stroke-dashoffset', L * (1 - ease(prog(t, 28.3, 29.6))));
+    for (let i = 0; i < 24; i++) {
+      const ph = (prog(t, 29.4, 33.4) * 1.4 + (i * 0.137) % 1) % 1;
+      const e = $('cf' + i); e.setAttribute('x', 240 + (i * 97) % 600); e.setAttribute('y', 100 + ph * 360);
+      e.setAttribute('transform', `rotate(${ph * 720 + i * 30} ${247 + (i * 97) % 600} ${111 + ph * 360})`); e.style.opacity = t > 29.4 ? 1 : 0;
+    }
+    $('s3-dusk').style.opacity = .55 * prog(t, 33.3, 35);
+    const dp = ease(prog(t, 35.0, 36.4)); $('st-door').setAttribute('height', 240 * dp);
+    for (let i = 0; i < 10; i++) $('sl' + i).style.opacity = (820 + i * 22) < 800 + 240 * dp ? 1 : 0;
+    pop('passa', t, 36.3, 99, 540, 608);
+  }
+  // S4
+  if (t > 37.8 && t < 46.9) {
+    setT('s4-rosa-pos', 60, 620, 1.75);
+    setT('s4-filho-pos', 690, 640, 1.7);
+    setMood('s4-filho', t > 38.3 && t < 42.4 ? (talking(t) ? 'talk' : null) : null);
+    setMood('s4-rosa', t > 42.8 && t < 46.4 ? 'laugh' : null);
+  }
+  // S4b
+  if (t > 46.4 && t < 57.3) {
+    setT('s4b-rico-pos', 70, 400, 1.6);
+    setT('s4b-filho-pos', 650, 700, 1.4);
+    const bp = ease(prog(t, 46.8, 47.6)); setT('bag', lerp(250, 300, bp), lerp(-120, 780, bp), .9);
+    setO('bag', 1 - prog(t, 48.0, 48.3));
+    setMood('s4b-rico', t > 47.6 && t < 49 ? 'talk' : null);
+    const up = $('uturn'); const L = up.getTotalLength();
+    const rp = ease(prog(t, 48.2, 50.8));
+    up.setAttribute('stroke-dasharray', `${L * rp} ${L}`);
+    up.style.opacity = t > 48.2 ? 1 : 0;
+    const pt = up.getPointAtLength(L * rp), pt2 = up.getPointAtLength(Math.max(0, L * rp - 4));
+    const ang = Math.atan2(pt.y - pt2.y, pt.x - pt2.x) * 180 / Math.PI;
+    setT('s4b-coin', pt.x, pt.y, .9); setO('s4b-coin', t > 48.2 && t < 51.2 ? 1 : 0);
+    setT('uturn-head', pt.x, pt.y, 1, ang); setO('uturn-head', t > 48.2 && t < 51 ? 0 : (t >= 51 ? 1 : 0));
+    pop('tag1', t, 51.0, 99, 195, 285); pop('tag2', t, 51.4, 99, 505, 285); pop('tag3', t, 51.8, 99, 850, 285);
+    pop('holerite', t, 52.8, 99, 820, 1255);
+    setMood('s4b-filho', t > 52.8 ? 'sad' : null);
+  }
+  // S5
+  if (t > 56.8 && t < 62.9) {
+    pop('lock', t, 57.4, 99, 90, 70);
+    for (let i = 0; i < 3; i++) {
+      const ct = 58.6 + i * .9;
+      $('card' + i + '-grey').style.opacity = .55 * prog(t, ct, ct + .4);
+      $('card' + i + '-crack').style.opacity = prog(t, ct, ct + .2);
+      const shake = t > ct && t < ct + .3 ? Math.sin(t * 90) * 6 : 0;
+      $('card' + i).setAttribute('transform', `translate(${shake} 0)`);
+    }
+  }
+  // S6
+  if (t > 62.4 && t < 72.4) {
+    const zp = ease(prog(t, 62.6, 63.4));
+    setT('s6-rosa-pos', lerp(340, 240, zp), lerp(700, 560, zp), lerp(2.0, 3.0, zp));
+    setMood('s6-rosa', t > 68.6 ? 'laugh' : (t > 63 && t < 68.4 && talking(t) ? 'talk' : null));
+  }
+  // bubbles
+  for (const b of bubbles) {
+    const e = $(b.id); const o = win(t, b.a, b.b, .25); const p = backOut(prog(t, b.a, b.a + .35));
+    e.style.opacity = o; e.style.transform = `scale(${Math.max(.001, t < b.a ? 0 : p)})`;
+  }
+  // captions
+  let ci = caps.findIndex(c => t >= c.a && t < c.b);
+  if (ci !== capCur) { capCur = ci; if (ci >= 0) { capEl.innerHTML = caps[ci].html; capEl.className = caps[ci].punch ? 'punch' : ''; } else { capEl.innerHTML = '<span style="color:#b9b4ab;font-size:40px;font-weight:700">🍰 Dona Rosa explica a economia</span>'; capEl.className = ''; } }
+  if (ci < 0) { capEl.style.opacity = 1; capEl.style.transform = 'none'; }
+  if (ci >= 0) { const c = caps[ci]; const o = win(t, c.a, c.b, .25); capEl.style.opacity = o; capEl.style.transform = `translateY(${(1 - prog(t, c.a, c.a + .3)) * 30}px)`; }
+  // end
+  $('end').style.opacity = prog(t, END[0], END[0] + .5);
+  $('progress').style.width = (1080 * t / TOTAL) + 'px';
+}
+window.render = render; window.TOTAL = TOTAL;
+render(0);
+</script>
+</body>
+</html>
