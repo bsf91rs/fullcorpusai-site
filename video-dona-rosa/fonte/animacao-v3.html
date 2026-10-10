@@ -174,6 +174,13 @@
 <div id="end"><h1>Sem povo com renda,<br>não tem empresa.<br><span class="hl">Nem país.</span></h1><div class="tag">Dinheiro que circula é dinheiro que trabalha.</div>
   <div class="ai">Animação produzida com auxílio de inteligência artificial</div></div>
 
+<div id="fin" style="position:absolute;inset:0;opacity:0;display:none;background:radial-gradient(circle at 50% 30%, #23285A 0%, #0D0F22 70%);padding:0 80px">
+  <div class="abs" style="left:80px;top:380px;font-size:34px;font-weight:700;letter-spacing:6px;color:#FFD23F">— SÓ PRA VOCÊ SABER</div>
+  <div class="abs big" id="f1" style="left:80px;right:80px;top:470px;font-size:132px;letter-spacing:-4px">Isso não é<br><span class="hl">opinião.</span></div>
+  <div class="abs" id="f2" style="left:80px;right:80px;top:820px;font-size:56px;font-weight:700;line-height:1.25;color:#E6E8FF">Na economia, isso tem nome: <b style="color:#fff;background:linear-gradient(transparent 60%,rgba(255,210,63,.55) 60%)">fluxo circular da renda</b> e <b style="color:#fff;background:linear-gradient(transparent 60%,rgba(255,210,63,.55) 60%)">efeito multiplicador</b>.</div>
+  <div class="card abs" id="f3" style="left:80px;right:80px;top:1180px;padding:40px 46px;font-size:44px;font-weight:700;line-height:1.25;color:#E6E8FF">📚 É conteúdo básico, ensinado em qualquer livro de introdução à economia.</div>
+  <div class="abs" style="left:0;right:0;bottom:80px;text-align:center;color:#8C8FB0;font-size:30px;font-weight:500">Animação produzida com auxílio de inteligência artificial</div>
+</div>
 <script src="avatars.js"></script>
 <script>
 // ---------- helpers ----------
@@ -242,7 +249,7 @@ $('plusbox').innerHTML = LINKS.map(([, b, , , g], i) => { const B = box(b); retu
 
 // ---------- timeline ----------
 const SC = { s1: [0, 6.2], s2: [6.0, 12.3], s3: [12.2, 30.2], s4: [30.0, 37.2], s5: [37.0, 53.2], s6: [53.0, 61.2], s7: [61.0, 71.2], s8: [71.0, 77.2], s9: [77.0, 86.2] };
-const END = 86.0, TOTAL = 92.0;
+const END = 86.0, FIN = 92.0, TOTAL = 99.0;
 const KICK = [[0, 6, 'Economia sem enrolação', '#FFD23F'], [6, 12.2, 'Mesmo valor, dois destinos', '#FFD23F'], [12.2, 30.1, 'Para onde vai o dinheiro', '#FFD23F'],
   [30.1, 37.1, 'E o dinheiro do bilionário?', '#AEB3E0'], [37.1, 42.5, 'Política 1: dinheiro embaixo', '#3DDC97'], [42.5, 53.1, 'Política 2: só em cima', '#FF6B4A'],
   [53.1, 61.1, 'Na hora do jantar', '#FFD23F'], [61.1, 71.1, 'A falácia do eu-empresário', '#FF6B4A'], [71.1, 77.1, 'A conta chega pra você', '#FF6B4A'], [77.1, 86, 'O recado da Dona Rosa', '#FFD23F']];
@@ -372,6 +379,8 @@ function renderMain(t) {
   }
   $('end').style.opacity = prog(t, END, END + .6);
   $('end').style.transform = `scale(${1.04 - .04 * easeOut(prog(t, END, END + 1.4))})`;
+  const fo = prog(t, FIN, FIN + .5); $('fin').style.opacity = fo; $('fin').style.display = fo > 0 ? 'block' : 'none';
+  appear('f1', t, FIN + .3); appear('f2', t, FIN + 1.2); appear('f3', t, FIN + 2.6, 1e9, 60);
 }
 const INTRO = 4.0;
 function render(T) {

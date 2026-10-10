@@ -1,5 +1,5 @@
 import numpy as np, wave, sys
-SR = 44100; T = 96.0; N = int(SR * T)
+SR = 44100; T = 103.0; N = int(SR * T)
 rng = np.random.default_rng(7)
 mix = np.zeros(N)
 
@@ -101,6 +101,8 @@ whoosh(71.0); popfx(71.6)
 for i in range(3): add(noise(.25, .08, .7), 72.8 + i * .9, .45)
 whoosh(77.0); popfx(77.3); popfx(82.0)
 whoosh(85.8)
+whoosh(91.8); popfx(92.3); popfx(93.2); popfx(94.6)
+for m in [53, 60, 65, 69, 72]: add(pluck(note(m), 5.0, .998), 92.0, 0.13)
 
 mix = np.tanh(mix * 1.2) * .85
 pcm = (mix * 32767).astype(np.int16)
