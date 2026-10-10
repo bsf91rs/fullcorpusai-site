@@ -1,5 +1,5 @@
 import numpy as np, wave, sys
-SR = 44100; T = 90.5; N = int(SR * T)
+SR = 44100; T = 92.0; N = int(SR * T)
 rng = np.random.default_rng(7)
 mix = np.zeros(N)
 
@@ -41,10 +41,10 @@ def pl(m, d):
     return cache[k]
 beat = 60 / 100 / 2
 pattern = [0, 2, 1, 3, 2, 1, 3, 2]
-MEND = 84.6
+MEND = 86.0
 t = 0.0; bar = 0
 while t < MEND:
-    darkzone = (45.8 <= t < 50.6) or (65.2 <= t < 75.2) or (27.6 <= t < 31.0)
+    darkzone = (47.5 <= t < 53.0) or (61.0 <= t < 77.0) or (30.0 <= t < 33.5)
     prog = sad if darkzone else happy
     chord = prog[bar % 4]
     for k, idx in enumerate(pattern):
@@ -65,31 +65,38 @@ def whoosh(t, dur=.5): add(noise(dur, dur / 2, .08) * np.hanning(int(dur * SR)),
 def tick(t, f=2200): add(tone(f, .1, .03, harm=(1,)), t, .18)
 def thud(t): add(tone(70, .4, .12, harm=(1, .3)), t, .7)
 
-whoosh(.9); popfx(1.9)
-whoosh(6.4); whoosh(6.6)
-# chain arrivals (start + duration), rising pitch
-arr = [11.9, 13.0, 14.5, 15.9, 17.7, 19.0, 21.0, 21.15, 21.3, 22.6, 25.0, 25.1, 25.2, 25.3, 26.8, 26.9]
-scale = [1047, 1175, 1319, 1397, 1568, 1760, 1976, 2093]
-for i, a in enumerate(arr): plim(a, scale[min(len(scale) - 1, i // 2)])
-whoosh(27.9, .6); popfx(29.0)
-for i in range(12): tick(34.9 + i * .23 + 1.0, 1800 + (i % 4) * 300)
-popfx(37.9); plim(38.0, 1568)
-popfx(40.5)
-for i in range(10): add(noise(.05, .02, .6), 41.9 + i * .05, .25)
-for i in range(4): tick(46.0 + i * .5, 600)
+whoosh(.2); popfx(.5)
+for i in range(6): tick(1.2 + i * .22 + .1, 1400 + i * 120)
+whoosh(6.1)
+for i in range(16): tick(6.4 + i * .1, 900 + i * 60)
+popfx(8.8); popfx(9.6)
+whoosh(12.3)
+for i, a in enumerate([12.6, 14.3, 16.6, 17.1, 19.6, 20.1, 22.6, 23.1]): popfx(a)
+arr = [14.6, 16.9, 17.4, 19.9, 20.4, 22.9, 23.4, 25.6, 25.8, 26.0, 26.2]
+scale = [1047, 1175, 1319, 1397, 1568, 1760, 1976, 2093, 2349, 2637, 2794]
+for i, a in enumerate(arr): plim(a, scale[i])
+whoosh(30.1); popfx(30.4); thud(31.8); popfx(33.6)
+whoosh(37.1)
+for i in range(15): tick(37.3 + i * .1, 1500 + (i % 5) * 200)
+popfx(39.4); plim(39.5, 1568)
+popfx(42.5)
+for i in range(10): add(noise(.05, .02, .6), 43.8 + i * .05, .25)
+for i in range(15): tick(47.6 + i * .17, 500)
 n = int(1.4 * SR); r = noise(1.4, 10, .5) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 18 * np.arange(n) / SR)))
-add(r * np.linspace(1, .6, n), 47.4, .25); thud(48.8)
-popfx(50.9); popfx(55.4)
-whoosh(59.4); thud(60.2)
-popfx(63.6); popfx(64.0); popfx(64.4)
+add(r * np.linspace(1, .6, n), 48.4, .25); thud(49.8); popfx(50.6)
+whoosh(53.0); popfx(53.3); popfx(57.2)
+whoosh(61.1); thud(62.3)
+whoosh(63.0, 1.2)
+popfx(65.6); popfx(66.0); popfx(66.4)
 for k, m in enumerate([55, 54, 53, 52]):
     dur = .35 if k < 3 else .9
     f = note(m); n = int(dur * SR); tt = np.arange(n) / SR
     vib = np.sin(2 * np.pi * f * tt + (k == 3) * 3 * np.sin(2 * np.pi * 6 * tt))
-    add((vib + .4 * np.sign(vib)) * np.minimum(1, tt / .02) * np.exp(-tt / (dur * .8)), 65.5 + k * .38, .12)
-popfx(70.0)
-for i in range(3): add(noise(.25, .08, .7), 71.2 + i * .9, .45)
-popfx(75.6); popfx(81.2)
+    add((vib + .4 * np.sign(vib)) * np.minimum(1, tt / .02) * np.exp(-tt / (dur * .8)), 67.1 + k * .38, .12)
+whoosh(71.0); popfx(71.6)
+for i in range(3): add(noise(.25, .08, .7), 72.8 + i * .9, .45)
+whoosh(77.0); popfx(77.3); popfx(82.0)
+whoosh(85.8)
 
 mix = np.tanh(mix * 1.2) * .85
 pcm = (mix * 32767).astype(np.int16)
