@@ -1,5 +1,5 @@
 import numpy as np, wave, sys
-SR = 44100; T = 78.0; N = int(SR * T)
+SR = 44100; T = 90.5; N = int(SR * T)
 rng = np.random.default_rng(7)
 mix = np.zeros(N)
 
@@ -39,55 +39,57 @@ def pl(m, d):
     k = (m, d)
     if k not in cache: cache[k] = pluck(note(m), 1.4, d)
     return cache[k]
-beat = 60 / 100 / 2  # eighth notes
+beat = 60 / 100 / 2
 pattern = [0, 2, 1, 3, 2, 1, 3, 2]
+MEND = 84.6
 t = 0.0; bar = 0
-while t < 72.0:
-    darkzone = (33.2 <= t < 38.0) or (52.8 <= t < 62.6)
+while t < MEND:
+    darkzone = (45.8 <= t < 50.6) or (65.2 <= t < 75.2) or (27.6 <= t < 31.0)
     prog = sad if darkzone else happy
     chord = prog[bar % 4]
     for k, idx in enumerate(pattern):
         tt = t + k * beat
-        if tt >= 72: break
+        if tt >= MEND: break
         g = 0.10 if darkzone else 0.13
         add(pl(chord[idx], .996), tt, g)
         if k == 0: add(pl(chord[0] - 12, .997), tt, 0.12)
     t += 8 * beat; bar += 1
-# final chord
-for m in [48, 60, 64, 67, 72, 76]: add(pluck(note(m), 4.0, .998), 72.0, 0.16)
+for m in [48, 60, 64, 67, 72, 76]: add(pluck(note(m), 4.0, .998), MEND, 0.16)
 
 # --- sfx ---
-def plim(t, f): add(tone(f, .8, .35, harm=(1, .3, .15)) + tone(f * 2.01, .8, .2, harm=(.4,)), t, .35)
-def popfx(t): 
+def plim(t, f): add(tone(f, .8, .35, harm=(1, .3, .15)) + tone(f * 2.01, .8, .2, harm=(.4,)), t, .32)
+def popfx(t):
     n = int(.12 * SR); tt = np.arange(n) / SR
     add(np.sin(2 * np.pi * (300 + 900 * tt / .12) * tt) * env(n, .002, .04), t, .45)
 def whoosh(t, dur=.5): add(noise(dur, dur / 2, .08) * np.hanning(int(dur * SR)), t, .5)
 def tick(t, f=2200): add(tone(f, .1, .03, harm=(1,)), t, .18)
 def thud(t): add(tone(70, .4, .12, harm=(1, .3)), t, .7)
 
-whoosh(.8); popfx(1.9)
+whoosh(.9); popfx(1.9)
 whoosh(6.4); whoosh(6.6)
-for i, f in enumerate([1318, 1568, 1760, 2093]): plim(8.6 + i * 1.25 + .9, f)
-whoosh(9.2, .6)
-for i in range(14): tick(22.4 + i * .22 + 1.0, 1800 + (i % 4) * 300)
-popfx(25.4); plim(25.5, 1568)
-popfx(28.0)
-for i in range(10): add(noise(.05, .02, .6), 29.4 + i * .05, .25)  # confetti burst
-for i in range(5): tick(33.6 + i * .45, 600)
-# door rattle
+# chain arrivals (start + duration), rising pitch
+arr = [11.9, 13.0, 14.5, 15.9, 17.7, 19.0, 21.0, 21.15, 21.3, 22.6, 25.0, 25.1, 25.2, 25.3, 26.8, 26.9]
+scale = [1047, 1175, 1319, 1397, 1568, 1760, 1976, 2093]
+for i, a in enumerate(arr): plim(a, scale[min(len(scale) - 1, i // 2)])
+whoosh(27.9, .6); popfx(29.0)
+for i in range(12): tick(34.9 + i * .23 + 1.0, 1800 + (i % 4) * 300)
+popfx(37.9); plim(38.0, 1568)
+popfx(40.5)
+for i in range(10): add(noise(.05, .02, .6), 41.9 + i * .05, .25)
+for i in range(4): tick(46.0 + i * .5, 600)
 n = int(1.4 * SR); r = noise(1.4, 10, .5) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 18 * np.arange(n) / SR)))
-add(r * np.linspace(1, .6, n), 35.0, .25); thud(36.4)
-popfx(38.3); popfx(42.8)
-whoosh(46.8); thud(47.6)
-popfx(51.0); popfx(51.4); popfx(51.8)
-# sad trombone
+add(r * np.linspace(1, .6, n), 47.4, .25); thud(48.8)
+popfx(50.9); popfx(55.4)
+whoosh(59.4); thud(60.2)
+popfx(63.6); popfx(64.0); popfx(64.4)
 for k, m in enumerate([55, 54, 53, 52]):
     dur = .35 if k < 3 else .9
     f = note(m); n = int(dur * SR); tt = np.arange(n) / SR
     vib = np.sin(2 * np.pi * f * tt + (k == 3) * 3 * np.sin(2 * np.pi * 6 * tt))
-    add((vib + .4 * np.sign(vib)) * np.minimum(1, tt / .02) * np.exp(-tt / (dur * .8)), 52.9 + k * .38, .12)
-for i in range(3): add(noise(.25, .08, .7), 58.6 + i * .9, .45); 
-popfx(63.0); popfx(68.6)
+    add((vib + .4 * np.sign(vib)) * np.minimum(1, tt / .02) * np.exp(-tt / (dur * .8)), 65.5 + k * .38, .12)
+popfx(70.0)
+for i in range(3): add(noise(.25, .08, .7), 71.2 + i * .9, .45)
+popfx(75.6); popfx(81.2)
 
 mix = np.tanh(mix * 1.2) * .85
 pcm = (mix * 32767).astype(np.int16)

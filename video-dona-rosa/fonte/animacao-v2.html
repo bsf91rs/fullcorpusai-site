@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Na minha mão não esquenta</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+  body { font-family: "Inter", "DejaVu Sans", sans-serif; }
+  #stage { position: absolute; inset: 0; background: #FFF3DF; overflow: hidden; }
+  .scene { position: absolute; left: 0; top: 0; width: 1080px; height: 1440px; opacity: 0; display: block; }
+  .char .m-open, .char .e-laugh, .char .m-sad { display: none; }
+  .char.talk .m-open { display: inline; } .char.talk .m-closed { display: none; }
+  .char.laugh .e-open { display: none; } .char.laugh .e-laugh, .char.laugh .m-open { display: inline; } .char.laugh .m-closed { display: none; }
+  .char.sad .m-closed, .char.sad .m-open { display: none; } .char.sad .m-sad { display: inline; }
+  svg text { font-family: "Inter", sans-serif; }
+
+  #capbg { position: absolute; left: 0; right: 0; top: 1440px; bottom: 0; background: #FFFBF3; box-shadow: 0 -12px 30px rgba(0,0,0,.10); }
+  #capbox { position: absolute; left: 56px; right: 56px; top: 1470px; height: 380px; display: flex; align-items: center; justify-content: center; text-align: center; }
+  #cap { font-weight: 800; font-size: 58px; line-height: 1.2; color: #1B1F3B; letter-spacing: -0.6px; }
+  #cap.punch { font-size: 66px; }
+  #cap .hl { background: linear-gradient(transparent 12%, #FFD23F 12%, #FFD23F 92%, transparent 92%); padding: 0 8px; border-radius: 8px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  #cap .idle { color: #B9B1A3; font-size: 38px; font-weight: 700; letter-spacing: 0; }
+
+  .bubble { position: absolute; background: #fff; border-radius: 46px; padding: 32px 40px; font-weight: 800; font-size: 50px;
+            line-height: 1.2; color: #1B1F3B; opacity: 0; transform-origin: 50% 100%;
+            box-shadow: 0 18px 40px rgba(27,31,59,.18), 0 3px 0 rgba(27,31,59,.06); }
+  .bubble::after { content: ""; position: absolute; bottom: -34px; width: 0; height: 0; border-left: 24px solid transparent; border-right: 24px solid transparent; border-top: 36px solid #fff; }
+  .bubble.tail-l::after { left: 100px; } .bubble.tail-r::after { right: 100px; } .bubble.tail-c::after { left: calc(50% - 24px); }
+  .bubble u { text-decoration-color: #E4572E; text-decoration-thickness: 6px; text-underline-offset: 6px; }
+
+  #end { position: absolute; inset: 0; opacity: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px;
+         background: radial-gradient(circle at 50% 35%, #2A2F5C 0%, #14172E 70%); }
+  #end h1 { color: #fff; font-size: 106px; font-weight: 900; line-height: 1.06; letter-spacing: -2.5px; }
+  #end h1 span { color: #FFD23F; }
+  #end .tag { margin-top: 64px; color: #FFB4A2; font-size: 46px; font-weight: 800; }
+  #end .ai { position: absolute; bottom: 70px; left: 0; right: 0; color: #8C8FB0; font-size: 30px; font-weight: 500; }
+  #progress { position: absolute; left: 0; bottom: 0; height: 10px; background: linear-gradient(90deg, #E4572E, #FFD23F); width: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="scenes"></div>
+  <div id="capbg"></div>
+  <div id="bubbles"></div>
+  <div id="capbox"><div id="cap"></div></div>
+  <div id="end">
+    <h1>Sem povo com renda,<br>não tem empresa.<br><span>Nem país.</span></h1>
+    <div class="tag">Dinheiro que circula é dinheiro que trabalha.</div>
+    <div class="ai">Animação produzida com auxílio de inteligência artificial</div>
+  </div>
+  <div id="progress"></div>
+</div>
+
+<script>
+// ================= helpers =================
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const backOut = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const win = (t, a, b, f = .35) => Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b));
+const $ = id => document.getElementById(id);
+const tr = (id, s) => { const e = $(id); if (e) e.setAttribute('transform', s); };
+const place = (id, x, y, s = 1, r = 0, flip = false) => tr(id, `translate(${x} ${y}) rotate(${r}) scale(${flip ? -s : s} ${s})`);
+const op = (id, o) => { const e = $(id); if (e) e.style.opacity = o; };
+const attr = (id, k, v) => { const e = $(id); if (e) e.setAttribute(k, v); };
+const hash = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 9973; return h / 9973 * 6.28; };
+const shade = (hex, p) => { const n = parseInt(hex.slice(1), 16); const f = v => Math.round(p < 0 ? v * (1 + p) : v + (255 - v) * p);
+  return '#' + [n >> 16, n >> 8 & 255, n & 255].map(f).map(v => v.toString(16).padStart(2, '0')).join(''); };
+const setMood = (id, mood) => { const e = $(id); if (!e) return; e.classList.remove('talk', 'laugh', 'sad'); if (mood) e.classList.add(mood); };
+const talking = t => Math.floor(t * 9) % 3 !== 0;
+const pop = (id, t, a, b, cx, cy) => { const p = prog(t, a, a + .4), o = win(t, a, b, .25);
+  tr(id, `translate(${cx} ${cy}) scale(${Math.max(.001, backOut(p))}) translate(${-cx} ${-cy})`); op(id, t < a ? 0 : o); };
+
+// ================= character system =================
+// feet at (0,0), ~200 units tall, facing viewer
+function person(id, o = {}) {
+  const skin = o.skin || '#C68642', skD = shade(skin, -.22);
+  const top = o.top || '#4A90D9', topD = shade(top, -.25);
+  const pants = o.pants || '#34495E', shoes = o.shoes || '#2B2B33', hc = o.hairC || '#2B1B12';
+  const legC = o.dress ? skin : pants;
+  const sleeve = o.suit ? top : top, fore = o.longSleeve || o.suit ? top : skin;
+  let back = '', front = '';
+  const H = {
+    rosa: [`<circle cx="-25" cy="-176" r="15"/><circle cx="25" cy="-176" r="15"/><circle cx="0" cy="-198" r="19"/><circle cx="-31" cy="-157" r="11"/><circle cx="31" cy="-157" r="11"/><circle cx="-14" cy="-192" r="13"/><circle cx="14" cy="-192" r="13"/>`,
+           `<path d="M-30 -158 Q-31 -193 0 -193 Q31 -193 30 -158 Q20 -177 0 -178 Q-20 -177 -30 -158Z"/>
+            <path d="M-27 -171 Q0 -191 27 -171" stroke="#F2C14E" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+            <g transform="translate(25 -180)"><circle r="6.5" cy="-7" fill="#FF7FA8"/><circle r="6.5" cx="7" fill="#FF7FA8"/><circle r="6.5" cy="7" fill="#FF7FA8"/><circle r="6.5" cx="-7" fill="#FF7FA8"/><circle r="4.5" fill="#FFD23F"/></g>`],
+    short: ['', `<path d="M-30 -154 Q-33 -195 0 -195 Q33 -195 30 -154 Q28 -172 14 -179 Q-6 -171 -26 -175 Q-30 -166 -30 -154Z"/>`],
+    afro: [`<circle cx="0" cy="-170" r="37"/>`, `<path d="M-30 -160 Q-26 -186 0 -188 Q26 -186 30 -160 Q16 -172 0 -172 Q-16 -172 -30 -160Z"/>`],
+    long: [`<path d="M-35 -160 Q-37 -197 0 -197 Q37 -197 35 -160 L37 -108 Q0 -100 -37 -108Z"/>`, `<path d="M-30 -154 Q-31 -193 0 -193 Q31 -193 30 -154 Q22 -170 4 -179 Q-14 -168 -30 -154Z"/>`],
+    pony: [`<ellipse cx="33" cy="-150" rx="10" ry="24" transform="rotate(-15 33 -150)"/>`, `<path d="M-30 -154 Q-31 -193 0 -193 Q31 -193 30 -154 Q20 -174 -2 -178 Q-20 -172 -30 -154Z"/>`],
+    bald: ['', `<path d="M-30 -146 Q-32 -168 -24 -176 L-22 -146Z M30 -146 Q32 -168 24 -176 L22 -146Z"/><ellipse cx="-9" cy="-180" rx="9" ry="5" fill="#fff" opacity=".25"/>`],
+    slick: ['', `<path d="M-31 -152 Q-35 -197 4 -195 Q35 -191 31 -154 Q26 -179 -2 -181 Q-22 -179 -31 -152Z"/><path d="M-12 -190 Q10 -186 26 -172" stroke="#fff" stroke-width="2.5" opacity=".35" fill="none"/>`],
+    cap: ['', `<path d="M-30 -154 Q-33 -186 0 -186 Q33 -186 30 -154Z"/><path d="M-32 -166 Q-31 -199 0 -199 Q31 -199 32 -166Z" fill="${o.capC || '#2B6CB0'}"/><path d="M-6 -170 Q30 -175 52 -165 Q30 -160 -6 -164Z" fill="${shade(o.capC || '#2B6CB0', -.25)}"/>`],
+    helmet: ['', `<path d="M-34 -164 Q-33 -204 0 -204 Q33 -204 34 -164Z" fill="#F7C531"/><rect x="-39" y="-169" width="78" height="9" rx="4.5" fill="#E0A800"/><rect x="-4" y="-204" width="8" height="35" rx="3" fill="#E0A800"/>`],
+    straw: ['', `<ellipse cx="0" cy="-171" rx="54" ry="11" fill="#E3C27A"/><path d="M-28 -171 Q-27 -205 0 -205 Q27 -205 28 -171Z" fill="#EBD192"/><rect x="-28" y="-180" width="56" height="7" fill="#B5462E"/>`],
+  }[o.hair || 'short'];
+  back = H[0]; front = H[1];
+  const torso = o.dress
+    ? `<path d="M-30 -116 Q0 -128 30 -116 Q41 -80 49 -34 Q0 -24 -49 -34 Q-41 -80 -30 -116Z" fill="${top}"/><path d="M10 -123 Q24 -121 30 -116 Q41 -80 49 -34 Q32 -29 16 -28 Q22 -80 10 -123Z" fill="#000" opacity=".11"/>`
+    : `<path d="M-30 -116 Q0 -128 30 -116 Q37 -92 35 -62 Q0 -54 -35 -62 Q-37 -92 -30 -116Z" fill="${top}"/><path d="M10 -123 Q24 -121 30 -116 Q37 -92 35 -62 Q24 -59 14 -58 Q20 -92 10 -123Z" fill="#000" opacity=".11"/>`;
+  const apron = o.apron ? `<path d="M-20 -104 Q0 -100 20 -104 L${o.dress ? 27 : 24} ${o.dress ? -40 : -60} Q0 ${o.dress ? -34 : -55} -${o.dress ? 27 : 24} ${o.dress ? -40 : -60}Z" fill="${o.apron}"/><path d="M-20 -104 L-12 -122 M20 -104 L12 -122" stroke="${o.apron}" stroke-width="4"/>` : '';
+  const suit = o.suit ? `<path d="M-9 -123 L0 -96 L9 -123Z" fill="#fff"/><path d="M-3 -116 L3 -116 L5 -82 L0 -74 L-5 -82Z" fill="${o.tie || '#D7263D'}"/><path d="M-12 -122 L0 -96 L-20 -104Z M12 -122 L0 -96 L20 -104Z" fill="${topD}"/>` : `<path d="M-10 -123 Q0 -114 10 -123" stroke="${topD}" stroke-width="3.5" fill="none"/>`;
+  const label = o.label ? `<rect x="-24" y="${o.apron ? -92 : -100}" width="48" height="16" rx="4" fill="#fff" opacity=".92"/><text x="0" y="${o.apron ? -80 : -88}" font-size="10.5" font-weight="800" text-anchor="middle" fill="#1B1F3B">${o.label}</text>` : '';
+  const items = {
+    pote: `<g transform="translate(41 -66)"><rect x="-10" y="-8" width="20" height="25" rx="4" fill="#FBF0DA" stroke="#C99A6B" stroke-width="2"/><rect x="-10" y="-1" width="20" height="6" fill="#7B3F1E"/><rect x="-10" y="7" width="20" height="5" fill="#F2B5C4"/><rect x="-11" y="-12" width="22" height="5" rx="2" fill="#E4572E"/></g>`,
+    phone: `<rect x="35" y="-78" width="13" height="22" rx="3" fill="#1B1F3B"/><rect x="36.5" y="-75.5" width="10" height="16" rx="1.5" fill="#7FD8FF"/>`,
+    bag: `<g transform="translate(41 -58)"><path d="M-12 0 h24 l4 30 h-32z" fill="#F4A261"/><path d="M-6 0 Q0 -10 6 0" stroke="#8a5a2b" stroke-width="2.5" fill="none"/><rect x="-7" y="-6" width="5" height="9" fill="#7CB518"/></g>`,
+    clip: `<g transform="translate(41 -70)"><rect x="-11" y="-2" width="22" height="28" rx="2" fill="#C8A165"/><rect x="-8" y="2" width="16" height="20" fill="#fff"/></g>`,
+    wrench: `<g transform="translate(41 -60) rotate(-30)"><rect x="-3" y="-22" width="6" height="30" rx="2" fill="#9AA5AD"/><circle cy="-24" r="7" fill="#9AA5AD"/></g>`,
+    watch: `<rect x="34" y="-66" width="12" height="7" rx="2" fill="#F2C14E"/>`,
+  };
+  const eyesOpen = `<g class="e-open"><ellipse cx="-11" cy="-159" rx="6" ry="7" fill="#fff"/><ellipse cx="11" cy="-159" rx="6" ry="7" fill="#fff"/><circle cx="-10.5" cy="-158" r="4.2" fill="#2A1A12"/><circle cx="11.5" cy="-158" r="4.2" fill="#2A1A12"/><circle cx="-9" cy="-160" r="1.5" fill="#fff"/><circle cx="13" cy="-160" r="1.5" fill="#fff"/></g>`;
+  const eyesLaugh = `<g class="e-laugh" stroke="#2A1A12" stroke-width="3.2" fill="none" stroke-linecap="round"><path d="M-17 -157 Q-11 -165 -5 -157"/><path d="M5 -157 Q11 -165 17 -157"/></g>`;
+  const shades = o.shades ? `<rect x="-22" y="-166" width="18" height="12" rx="4" fill="#111"/><rect x="4" y="-166" width="18" height="12" rx="4" fill="#111"/><rect x="-4" y="-163" width="8" height="3" fill="#111"/><path d="M-18 -163 L-12 -163" stroke="#fff" stroke-width="2" opacity=".5"/>` : '';
+  const glasses = o.glasses ? `<circle cx="-11" cy="-159" r="9.5" fill="none" stroke="#3a3a3a" stroke-width="2.5"/><circle cx="11" cy="-159" r="9.5" fill="none" stroke="#3a3a3a" stroke-width="2.5"/><path d="M-1.5 -160 L1.5 -160" stroke="#3a3a3a" stroke-width="2.5"/>` : '';
+  const stache = o.stache ? `<path d="M-13 -146 Q-6 -152 0 -147 Q6 -152 13 -146 Q6 -141 0 -143.5 Q-6 -141 -13 -146Z" fill="${o.stacheC || hc}"/>` : '';
+  const beard = o.beard ? `<path d="M-27 -152 Q-25 -121 0 -117 Q25 -121 27 -152 Q20 -134 0 -132 Q-20 -134 -27 -152Z" fill="${hc}" opacity=".92"/>` : '';
+  return `<g id="${id}" class="char">
+    <ellipse cx="0" cy="0" rx="38" ry="8" fill="#1B1F3B" opacity=".14"/>
+    <g id="${id}-legL"><rect x="-19" y="-72" width="16" height="68" rx="8" fill="${legC}"/><ellipse cx="-13" cy="-4" rx="13" ry="6.5" fill="${shoes}"/></g>
+    <g id="${id}-legR"><rect x="3" y="-72" width="16" height="68" rx="8" fill="${shade(legC, -.08)}"/><ellipse cx="13" cy="-4" rx="13" ry="6.5" fill="${shoes}"/></g>
+    <g id="${id}-up">
+      ${o.dress ? '' : `<rect x="-34" y="-70" width="68" height="12" rx="6" fill="${shade(pants, -.1)}"/>`}
+      ${torso}${apron}${suit}${label}
+      <g id="${id}-armL"><path d="M-29 -113 Q-38 -97 -38 -80" stroke="${sleeve}" stroke-width="17" stroke-linecap="round" fill="none"/><path d="M-38 -82 L-39 -61" stroke="${fore}" stroke-width="13" stroke-linecap="round"/><circle cx="-39" cy="-57" r="8.5" fill="${skin}"/></g>
+      <g id="${id}-armR"><path d="M29 -113 Q38 -97 38 -80" stroke="${shade(sleeve, -.06)}" stroke-width="17" stroke-linecap="round" fill="none"/><path d="M38 -82 L39 -61" stroke="${fore}" stroke-width="13" stroke-linecap="round"/><circle cx="39" cy="-57" r="8.5" fill="${skin}"/>${o.item ? items[o.item] : ''}</g>
+      <rect x="-7.5" y="-134" width="15" height="16" rx="5" fill="${skD}"/>
+      <g id="${id}-head">
+        <g fill="${hc}">${back}</g>
+        <ellipse cx="-28" cy="-155" rx="5.5" ry="8" fill="${skin}"/><ellipse cx="28" cy="-155" rx="5.5" ry="8" fill="${skD}"/>
+        ${o.earrings ? `<circle cx="-29" cy="-145" r="4" fill="#F2C14E"/><circle cx="29" cy="-145" r="4" fill="#F2C14E"/>` : ''}
+        <ellipse cx="0" cy="-157" rx="29" ry="32" fill="${skin}"/>
+        <path d="M12 -186 Q30 -176 29 -157 Q28 -136 10 -126 Q22 -150 12 -186Z" fill="#000" opacity=".08"/>
+        <g id="${id}-eyes">${eyesOpen}${eyesLaugh}</g>
+        <path d="M-17 -171 Q-11 -175 -5 -171 M5 -171 Q11 -175 17 -171" stroke="${shade(hc, .1)}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M-1 -153 Q3 -147 -1 -145" stroke="${skD}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <circle cx="-17" cy="-146" r="5.5" fill="#E86A6A" opacity=".28"/><circle cx="17" cy="-146" r="5.5" fill="#E86A6A" opacity=".28"/>
+        ${beard}
+        <path class="m-closed" d="M-9 -139 Q0 -132 9 -139" stroke="#5A2516" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <g class="m-open"><path d="M-10 -140 Q0 -124 10 -140Z" fill="#6B1F1F"/><path d="M-5 -131 Q0 -128 5 -131 Q0 -134 -5 -131Z" fill="#E86A6A"/></g>
+        <path class="m-sad" d="M-9 -134 Q0 -141 9 -134" stroke="#5A2516" stroke-width="3" fill="none" stroke-linecap="round"/>
+        ${stache}${glasses}${shades}
+        <g fill="${hc}">${front}</g>
+      </g>
+    </g>
+  </g>`;
+}
+// per-frame life: breathing, blinking, walking, gestures
+function life(id, t, o = {}) {
+  const ph = hash(id);
+  let bob = Math.sin(t * 2.3 + ph) * 1.6;
+  if (o.walk) {
+    const a = Math.sin(t * 9 + ph) * 22;
+    tr(id + '-legL', `rotate(${a} -11 -70)`); tr(id + '-legR', `rotate(${-a} 11 -70)`);
+    tr(id + '-armL', `rotate(${-a * .7} -29 -112)`); tr(id + '-armR', `rotate(${a * .7} 29 -112)`);
+    bob = -Math.abs(Math.sin(t * 9 + ph)) * 4;
+  } else {
+    tr(id + '-legL', ''); tr(id + '-legR', '');
+    tr(id + '-armL', `rotate(${o.armL || 0} -29 -112)`); tr(id + '-armR', `rotate(${o.armR || 0} 29 -112)`);
+  }
+  tr(id + '-up', `translate(0 ${bob})`);
+  tr(id + '-head', `rotate(${(o.tilt || 0) + Math.sin(t * 1.3 + ph) * 1.5} 0 -130)`);
+  const bl = ((t + ph) % 3.9) < .13;
+  tr(id + '-eyes', bl ? 'translate(0 -159) scale(1 .12) translate(0 159)' : '');
+}
+
+// ================= props & buildings =================
+const DEFS = `<defs>
+  <filter id="ds" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#1B1F3B" flood-opacity=".18"/></filter>
+  <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <radialGradient id="gold" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#FFF1A8"/><stop offset=".5" stop-color="#F7C531"/><stop offset="1" stop-color="#C98A06"/></radialGradient>
+  <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FD3FF"/><stop offset="1" stop-color="#E4F6FF"/></linearGradient>
+  <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#151A3A"/><stop offset="1" stop-color="#3B3F73"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#BFE9FF"/><stop offset="1" stop-color="#6FB7DD"/></linearGradient>
+  <linearGradient id="field" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BD36A"/><stop offset="1" stop-color="#6DB84A"/></linearGradient>
+  <linearGradient id="money" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7BD389"/><stop offset="1" stop-color="#3E9B54"/></linearGradient>
+</defs>`;
+const coinPlain = (id, r = 22) => `<g id="${id}"><circle r="${r}" fill="url(#gold)" stroke="#B07A05" stroke-width="${r * .12}"/><circle r="${r * .7}" fill="none" stroke="#E2A80F" stroke-width="${r * .08}"/><text y="${r * .32}" font-size="${r * .85}" font-weight="900" text-anchor="middle" fill="#8A5A00">R$</text><ellipse cx="${-r * .35}" cy="${-r * .45}" rx="${r * .25}" ry="${r * .12}" fill="#fff" opacity=".6" transform="rotate(-30 ${-r * .35} ${-r * .45})"/></g>`;
+const coinFace = (id, sleepy) => `<g id="${id}"><circle r="34" fill="url(#gold)" stroke="#B07A05" stroke-width="4.5"/><circle r="25" fill="none" stroke="#E2A80F" stroke-width="3"/>
+  ${sleepy ? `<path d="M-14 -4 Q-9 0 -4 -4 M4 -4 Q9 0 14 -4" stroke="#5a4300" stroke-width="3.5" fill="none" stroke-linecap="round"/>` : `<ellipse cx="-9" cy="-6" rx="4" ry="5.5" fill="#3a2a00"/><ellipse cx="9" cy="-6" rx="4" ry="5.5" fill="#3a2a00"/>`}
+  <path d="M-8 9 Q0 14 8 9" stroke="#3a2a00" stroke-width="3.5" fill="none" stroke-linecap="round"/><ellipse cx="-14" cy="-18" rx="8" ry="4" fill="#fff" opacity=".55" transform="rotate(-30 -14 -18)"/></g>`;
+const cash = (id, label = 'R$ 1.000') => `<g id="${id}"><g transform="rotate(-4)"><rect x="-82" y="-40" width="164" height="80" rx="10" fill="url(#money)"/><rect x="-74" y="-32" width="148" height="64" rx="6" fill="none" stroke="#fff" stroke-width="2.5" opacity=".5"/><circle cx="-48" cy="0" r="19" fill="#fff" opacity=".25"/><text x="16" y="11" font-size="29" font-weight="900" text-anchor="middle" fill="#fff">${label}</text></g></g>`;
+const tree = (x, y, s = 1, c = '#4CAF50') => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="0" rx="40" ry="9" fill="#1B1F3B" opacity=".12"/><rect x="-7" y="-60" width="14" height="60" rx="5" fill="#7A5236"/><circle cy="-92" r="40" fill="${c}"/><circle cx="-26" cy="-70" r="28" fill="${shade(c, -.1)}"/><circle cx="26" cy="-72" r="30" fill="${shade(c, -.15)}"/><circle cx="-12" cy="-108" r="14" fill="#fff" opacity=".15"/></g>`;
+function awning(x, y, w, c1, c2 = '#ffffff') {
+  const n = Math.max(4, Math.round(w / 44)), sw = w / n; let s = '';
+  for (let i = 0; i < n; i++) { const c = i % 2 ? c2 : c1; s += `<path d="M${x + i * sw} ${y} h${sw} v44 a${sw / 2} ${sw / 2 * .55} 0 0 1 ${-sw} 0z" fill="${c}"/>`; }
+  return `<g>${s}<rect x="${x - 4}" y="${y - 8}" width="${w + 8}" height="12" rx="6" fill="${shade(c1, -.25)}"/></g>`;
+}
+function store(id, x, base, w, h, o) {
+  const wall = o.wall || '#FFF6E9', y = base - h;
+  const goods = Array.from({ length: 12 }, (_, i) => `<rect x="${x + 34 + (i % 4) * (w * .42 - 20) / 4}" y="${y + 172 + Math.floor(i / 4) * ((h - 220) / 3.2)}" width="${(w * .42 - 34) / 4}" height="${(h - 220) / 4.5}" rx="3" fill="${['#E4572E', '#FFD23F', '#4CAF50', '#2B6CB0', '#FF7FA8'][i % 5]}"/>`).join('');
+  return `<g id="${id}" filter="url(#ds)">
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${wall}"/>
+    <rect x="${x + w - 20}" y="${y}" width="20" height="${h}" fill="#000" opacity=".06"/>
+    <rect x="${x - 8}" y="${y - 6}" width="${w + 16}" height="16" rx="6" fill="${shade(wall, -.3)}"/>
+    <rect x="${x + 18}" y="${y + 20}" width="${w - 36}" height="62" rx="12" fill="${o.signC || '#1B1F3B'}"/>
+    <text x="${x + w / 2}" y="${y + 64}" font-size="${o.fs || 34}" font-weight="900" text-anchor="middle" fill="${o.signT || '#FFD23F'}" letter-spacing="1">${o.name}</text>
+    ${o.cross ? `<g transform="translate(${x + w - 46} ${y + 51})"><rect x="-8" y="-22" width="16" height="44" rx="3" fill="#3DDC84"/><rect x="-22" y="-8" width="44" height="16" rx="3" fill="#3DDC84"/></g>` : ''}
+    ${awning(x + 8, y + 100, w - 16, o.aw || '#2E9E5B')}
+    <rect x="${x + 22}" y="${y + 162}" width="${w * .42}" height="${h - 200}" rx="8" fill="#2E3A46"/>
+    ${goods}
+    <rect id="${id}-glow" x="${x + 22}" y="${y + 162}" width="${w * .42}" height="${h - 200}" rx="8" fill="#FFD97A" opacity="0"/>
+    <path d="M${x + 30} ${y + 172} l40 0 l-30 60z" fill="#fff" opacity=".18"/>
+    <rect x="${x + w * .58}" y="${y + 162}" width="${w * .32}" height="${h - 162}" rx="6" fill="#7A5236"/>
+    <rect x="${x + w * .58 + 10}" y="${y + 176}" width="${w * .32 - 20}" height="${(h - 162) * .45}" rx="4" fill="url(#glass)" opacity=".85"/>
+    <circle cx="${x + w * .58 + w * .32 - 16}" cy="${y + 162 + (h - 162) * .6}" r="5" fill="#F2C14E"/>
+    <rect id="${id}-door" x="${x + w * .58 - 4}" y="${y + 154}" width="${w * .32 + 8}" height="0" fill="#9AA5AD"/>
+    <g id="${id}-slats"></g>
+  </g>`;
+}
+function house(x, base, w, h, c, roof = '#B23A48') {
+  const y = base - h;
+  return `<g filter="url(#ds)"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${c}"/><rect x="${x + w - 16}" y="${y}" width="16" height="${h}" fill="#000" opacity=".06"/>
+    <path d="M${x - 16} ${y + 6} L${x + w / 2} ${y - h * .55} L${x + w + 16} ${y + 6} Z" fill="${roof}"/><path d="M${x + w / 2} ${y - h * .55} L${x + w + 16} ${y + 6} L${x + w / 2 + 10} ${y + 6}Z" fill="#000" opacity=".12"/>
+    <rect x="${x + w * .14}" y="${y + h * .25}" width="${w * .32}" height="${h * .3}" rx="4" fill="url(#glass)"/><path d="M${x + w * .14} ${y + h * .25} h${w * .32} v${h * .08} q-${w * .16} ${h * .05} -${w * .32} 0z" fill="#FF9F9F" opacity=".85"/>
+    <rect x="${x + w * .58}" y="${y + h * .4}" width="${w * .26}" height="${h * .6}" rx="4" fill="#7A5236"/><circle cx="${x + w * .8}" cy="${y + h * .72}" r="3.5" fill="#F2C14E"/></g>`;
+}
+
+// ================= scene builders =================
+const S = $('scenes');
+let html = `<svg width="0" height="0" style="position:absolute">${DEFS}</svg>`;
+
+// ---------- S1 hook ----------
+html += `<svg id="s1" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="#FFE3C2"/>
+  <rect y="0" width="1080" height="1100" fill="#F9D3A7"/>
+  <rect x="120" y="230" width="380" height="430" rx="20" fill="#FFF6E9" filter="url(#ds)"/><rect x="140" y="250" width="340" height="390" rx="12" fill="url(#glass)"/>
+  <path d="M140 250 h340 v70 q-170 40 -340 0z" fill="#FF8FA3" opacity=".9"/><rect x="306" y="250" width="8" height="390" fill="#FFF6E9"/>
+  <rect x="660" y="300" width="300" height="200" rx="16" fill="#FFF6E9" filter="url(#ds)"/><text x="810" y="380" font-size="42" font-weight="900" text-anchor="middle" fill="#E4572E">BOLO DE</text><text x="810" y="432" font-size="42" font-weight="900" text-anchor="middle" fill="#E4572E">POTE 🍰</text><text x="810" y="474" font-size="26" font-weight="700" text-anchor="middle" fill="#7A5236">R$ 8,00</text>
+  ${tree(940, 1080, 1.4, '#5DBB63')}${tree(90, 1080, 1.1, '#4CAF50')}
+  <rect y="1100" width="1080" height="340" fill="#E9B98A"/><rect y="1100" width="1080" height="14" fill="#D9A574"/>
+  <g transform="translate(240 1095)"><rect x="-40" y="-70" width="80" height="70" rx="10" fill="#C0583A"/><circle cy="-92" r="34" fill="#5DBB63"/><circle cx="-22" cy="-80" r="22" fill="#4CAF50"/><circle cx="22" cy="-82" r="24" fill="#47A64C"/></g>
+  <g id="s1-p"><g>${person('rosa1', { hair: 'rosa', skin: '#8D5524', top: '#E4572E', dress: true, apron: '#FFF4E0', earrings: true, item: 'pote' })}</g></g>
+  <g id="s1-cash">${cash('s1-cash-in')}</g>
+</svg>`;
+
+// ---------- S2a split ----------
+html += `<svg id="s2a" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="716" fill="#FFE3C2"/>
+  ${house(600, 640, 300, 280, '#FFD6A5')}${tree(980, 650, .9)}
+  <rect y="640" width="1080" height="76" fill="#E9B98A"/>
+  <rect y="724" width="1080" height="716" fill="url(#skyNight)"/>
+  ${Array.from({ length: 9 }, (_, i) => { const bx = 470 + i * 70, bh = 180 + (i * 53) % 220; return `<rect x="${bx}" y="${1180 - bh}" width="62" height="${bh}" fill="#262B55"/>` + Array.from({ length: Math.floor(bh / 34) }, (_, j) => `<rect x="${bx + 10 + (j % 2) * 24}" y="${1180 - bh + 14 + j * 30}" width="14" height="14" fill="${(i + j) % 3 ? '#FFD97A' : '#3B4080'}"/>`).join(''); }).join('')}
+  <rect x="440" y="760" width="12" height="440" fill="#B8A07A"/><rect x="1060" y="760" width="12" height="440" fill="#B8A07A"/><rect x="440" y="760" width="632" height="12" fill="#B8A07A"/>
+  <rect y="1180" width="1080" height="260" fill="#3A2F4A"/><rect y="1180" width="1080" height="10" fill="#2A2238"/>
+  <rect x="0" y="716" width="1080" height="8" fill="#1B1F3B"/>
+  <g><rect x="32" y="32" width="300" height="66" rx="33" fill="#E4572E"/><text x="182" y="76" font-size="34" font-weight="900" fill="#fff" text-anchor="middle">DONA ROSA</text></g>
+  <g><rect x="32" y="756" width="300" height="66" rx="33" fill="#FFD23F"/><text x="182" y="800" font-size="34" font-weight="900" fill="#1B1F3B" text-anchor="middle">BILIONÁRIO</text></g>
+  <g id="s2a-rosa">${person('rosa2', { hair: 'rosa', skin: '#8D5524', top: '#E4572E', dress: true, apron: '#FFF4E0', earrings: true })}</g>
+  <g id="s2a-rico">${person('rico2', { hair: 'slick', hairC: '#A9ABB8', skin: '#F1C27D', top: '#1F2A4D', suit: true, longSleeve: true, shades: true, pants: '#1B2340', item: 'watch' })}</g>
+  <g id="s2a-c1">${cash('s2a-c1i')}</g><g id="s2a-c2">${cash('s2a-c2i')}</g>
+</svg>`;
+
+// ---------- S2b chain world ----------
+const W = { rosa: [300, 2660], ana: [585, 2660], jorge: [800, 2660], mot: [1060, 2560], atac: [1560, 2380], fab: [1640, 1560], op1: [1420, 1660], op2: [1560, 1680], op3: [1700, 1660], agri: [760, 1150],
+            farm: [480, 1360], posto: [2110, 2700], loja: [2120, 1980], agro: [420, 1980] };
+let world = `
+  <rect x="-400" y="-400" width="3300" height="3900" fill="url(#field)"/>
+  ${Array.from({ length: 9 }, (_, i) => `<rect x="${120 + i * 92}" y="560" width="62" height="420" rx="30" fill="#5BA83E"/>`).join('')}
+  <path d="M-300 2760 H2700" stroke="#8C8C99" stroke-width="140"/><path d="M-300 2760 H2700" stroke="#fff" stroke-width="7" stroke-dasharray="44 36"/>
+  <path d="M960 2760 C 980 2500, 1150 2460, 1300 2460" stroke="#8C8C99" stroke-width="110" fill="none"/>
+  <path d="M1250 2460 C 1250 2100, 1300 1900, 1450 1760" stroke="#8C8C99" stroke-width="100" fill="none"/>
+  <path d="M1250 1760 C 1000 1500, 900 1350, 820 1250" stroke="#B89B6F" stroke-width="80" fill="none"/>
+  <path d="M1500 1800 C 1800 1850, 1950 1950, 2050 2050" stroke="#8C8C99" stroke-width="90" fill="none"/>
+  <path d="M600 1250 C 520 1600, 480 1800, 420 2050" stroke="#B89B6F" stroke-width="70" fill="none"/>
+  ${tree(120, 2420, 1.2)}${tree(1000, 2100, 1)}${tree(2300, 2380, 1.1)}${tree(1080, 1200, 1)}${tree(2250, 1500, 1.2)}${tree(100, 1600, 1)}${tree(1950, 1050, 1)}
+  <!-- fazenda -->
+  <g filter="url(#ds)"><rect x="180" y="1080" width="340" height="260" rx="6" fill="#C0392B"/><path d="M160 1090 L350 950 L540 1090Z" fill="#9E2B20"/><rect x="290" y="1180" width="120" height="160" fill="#fff"/><path d="M290 1180 L410 1340 M410 1180 L290 1340" stroke="#C0392B" stroke-width="10"/><rect x="260" y="1110" width="180" height="50" rx="10" fill="#1B1F3B"/><text x="350" y="1146" font-size="32" font-weight="900" text-anchor="middle" fill="#FFD23F">FAZENDA</text></g>
+  <g transform="translate(600 1290)"><rect x="0" y="-60" width="110" height="50" rx="8" fill="#2E9E5B"/><rect x="60" y="-110" width="50" height="55" rx="6" fill="#2E9E5B"/><rect x="66" y="-104" width="38" height="30" fill="url(#glass)"/><circle cx="25" cy="-10" r="26" fill="#2B2B33"/><circle cx="25" cy="-10" r="10" fill="#F7C531"/><circle cx="95" cy="-8" r="18" fill="#2B2B33"/><circle cx="95" cy="-8" r="7" fill="#F7C531"/></g>
+  <!-- fábrica -->
+  <g filter="url(#ds)">
+    <rect x="1380" y="1180" width="640" height="360" rx="6" fill="#C9CED6"/>
+    <path d="M1380 1180 l80 -80 v80 l80 -80 v80 l80 -80 v80 l80 -80 v80 l80 -80 v80 l80 -80 v80 l80 -80 v80 l80 -80 v80z" fill="#9AA3AE"/>
+    <rect x="1880" y="900" width="60" height="220" fill="#8A5A44"/><rect x="1960" y="950" width="50" height="170" fill="#8A5A44"/>
+    ${Array.from({ length: 5 }, (_, i) => `<rect id="fw${i}" x="${1410 + i * 120}" y="1300" width="90" height="70" rx="6" fill="#FFD97A"/>`).join('')}
+    <rect x="1420" y="1200" width="560" height="74" rx="14" fill="#1B1F3B"/><text x="1700" y="1250" font-size="38" font-weight="900" text-anchor="middle" fill="#FFD23F">FÁBRICA DE ALIMENTOS</text>
+    <rect x="1640" y="1400" width="140" height="140" fill="#6B7380"/>
+  </g>
+  ${Array.from({ length: 6 }, (_, i) => `<circle id="smk${i}" r="30" fill="#E8ECF2" opacity=".8"/>`).join('')}
+  <!-- atacado -->
+  <g filter="url(#ds)">
+    <rect x="1320" y="2060" width="520" height="300" rx="6" fill="#E7A33E"/>
+    ${Array.from({ length: 25 }, (_, i) => `<rect x="${1330 + i * 20.5}" y="2060" width="3" height="300" fill="#000" opacity=".07"/>`).join('')}
+    <path d="M1300 2070 L1580 1980 L1860 2070Z" fill="#C7832A"/>
+    <rect x="1380" y="2090" width="400" height="74" rx="14" fill="#1B1F3B"/><text x="1580" y="2141" font-size="44" font-weight="900" text-anchor="middle" fill="#FFD23F">ATACADO</text>
+    <rect x="1440" y="2200" width="280" height="160" fill="#8C8C99"/>${Array.from({ length: 7 }, (_, i) => `<rect x="1440" y="${2210 + i * 22}" width="280" height="4" fill="#6E6E7B"/>`).join('')}
+    <rect x="1730" y="2290" width="70" height="60" fill="#C8A165"/><rect x="1760" y="2240" width="60" height="50" fill="#D7B47A"/>
+  </g>
+  <!-- truck -->
+  <g id="truck"><g filter="url(#ds)"><rect x="-130" y="-120" width="190" height="110" rx="10" fill="#fff"/><text x="-35" y="-55" font-size="28" font-weight="900" text-anchor="middle" fill="#E7A33E">ATACADO</text>
+    <path d="M62 -96 h48 q24 0 30 30 l6 56 h-84z" fill="#E4572E"/><rect x="74" y="-86" width="44" height="34" rx="6" fill="url(#glass)"/>
+    <g id="wh1" transform="translate(-80 -6)"><circle r="22" fill="#2B2B33"/><circle r="8" fill="#ccc"/><rect x="-2" y="-18" width="4" height="12" fill="#ccc"/></g>
+    <g id="wh2" transform="translate(100 -6)"><circle r="22" fill="#2B2B33"/><circle r="8" fill="#ccc"/><rect x="-2" y="-18" width="4" height="12" fill="#ccc"/></g></g></g>
+  <!-- mercadinho do Jorge + farmácia/posto/lojas -->
+  ${store('mk', 340, 2640, 520, 400, { name: 'MERCADINHO DO JORGE', fs: 34, aw: '#2E9E5B' })}
+  <g filter="url(#ds)"><rect x="520" y="2580" width="130" height="60" rx="8" fill="#1B1F3B"/><rect x="535" y="2590" width="60" height="26" rx="4" fill="#3DDC84"/></g>
+  ${store('farm', 180, 2050, 420, 330, { name: 'FARMÁCIA', cross: true, aw: '#3DA35D', signC: '#fff', signT: '#2E9E5B' })}
+  ${store('agro', 220, 1730, 420, 330, { name: 'AGROPECUÁRIA', aw: '#B5462E', fs: 32 })}
+  ${store('loja', 1920, 2060, 420, 330, { name: 'LOJA DE MÓVEIS', aw: '#8E44AD', fs: 32 })}
+  <g filter="url(#ds)"><rect x="1900" y="2440" width="430" height="34" rx="8" fill="#D7263D"/><rect x="1930" y="2474" width="22" height="200" fill="#B0B6BF"/><rect x="2280" y="2474" width="22" height="200" fill="#B0B6BF"/>
+    <rect x="2040" y="2560" width="50" height="110" rx="8" fill="#D7263D"/><rect x="2140" y="2560" width="50" height="110" rx="8" fill="#D7263D"/><rect x="2048" y="2575" width="34" height="26" fill="#fff"/><rect x="2148" y="2575" width="34" height="26" fill="#fff"/>
+    <text x="2115" y="2468" font-size="28" font-weight="900" text-anchor="middle" fill="#fff">POSTO</text></g>
+  <!-- people -->
+  <g id="wp-rosa">${person('rosa3', { hair: 'rosa', skin: '#8D5524', top: '#E4572E', dress: true, apron: '#FFF4E0', earrings: true, item: 'bag' })}</g>
+  <g id="wp-ana">${person('ana', { hair: 'pony', hairC: '#5A3220', skin: '#E0AC69', top: '#2E9E5B', label: 'CAIXA', pants: '#2B2B33' })}</g>
+  <g id="wp-jorge">${person('jorge3', { hair: 'bald', hairC: '#8F8F8F', skin: '#C68642', top: '#FFFFFF', apron: '#2E9E5B', stache: true, stacheC: '#555', label: 'JORGE' })}</g>
+  <g id="wp-mot">${person('mot', { hair: 'cap', capC: '#E4572E', skin: '#A0663A', top: '#3D5A80', beard: true, hairC: '#2B1B12' })}</g>
+  <g id="wp-atac">${person('atac', { hair: 'short', hairC: '#3A2A1E', skin: '#F1C27D', top: '#E7A33E', item: 'clip', glasses: true })}</g>
+  <g id="wp-op1">${person('op1', { hair: 'helmet', skin: '#8D5524', top: '#2B6CB0', pants: '#1F3A5F', item: 'wrench' })}</g>
+  <g id="wp-op2">${person('op2', { hair: 'helmet', skin: '#F1C27D', top: '#2B6CB0', pants: '#1F3A5F' })}</g>
+  <g id="wp-op3">${person('op3', { hair: 'helmet', skin: '#C68642', top: '#2B6CB0', pants: '#1F3A5F' })}</g>
+  <g id="wp-agri">${person('agri', { hair: 'straw', skin: '#A0663A', top: '#C0392B', pants: '#3D5A80', stache: true, hairC: '#3A2A1E' })}</g>
+  <g id="trails"></g>
+  <g id="chips"></g>
+  <g id="flows"></g>`;
+html += `<svg id="s2b" class="scene" viewBox="0 0 1080 1440"><rect width="1080" height="1440" fill="#7CC152"/>
+  <g id="cam">${world}</g>
+  <g id="counter" filter="url(#ds)"><rect x="40" y="36" width="1000" height="96" rx="48" fill="#fff"/><text x="90" y="98" font-size="38" font-weight="800" fill="#1B1F3B">🙋 Já ganharam com esse dinheiro:</text>
+    <circle cx="968" cy="84" r="38" fill="#FFD23F"/><text id="cnt" x="968" y="98" font-size="42" font-weight="900" text-anchor="middle" fill="#1B1F3B">0</text></g>
+</svg>`;
+
+// ---------- S2c vault ----------
+html += `<svg id="s2c" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="#2A2350"/>
+  <rect x="60" y="120" width="960" height="640" rx="12" fill="url(#skyNight)"/>
+  ${Array.from({ length: 12 }, (_, i) => { const bx = 70 + i * 80, bh = 200 + (i * 71) % 300; return `<rect x="${bx}" y="${760 - bh}" width="70" height="${bh}" fill="#262B55"/>` + Array.from({ length: Math.floor(bh / 40) }, (_, j) => `<rect x="${bx + 12 + (j % 2) * 28}" y="${760 - bh + 16 + j * 36}" width="16" height="16" fill="${(i + j) % 3 ? '#FFD97A' : '#3B4080'}"/>`).join(''); }).join('')}
+  <circle cx="880" cy="230" r="46" fill="#FFF3C4"/><circle cx="902" cy="216" r="46" fill="#1d2148"/>
+  <rect x="50" y="110" width="980" height="20" fill="#C9B38A"/><rect x="50" y="760" width="980" height="20" fill="#C9B38A"/><rect x="530" y="120" width="20" height="650" fill="#C9B38A"/>
+  <rect y="1160" width="1080" height="280" fill="#3A2F4A"/>
+  <g filter="url(#ds)"><rect x="520" y="820" width="480" height="420" rx="24" fill="#BFE9FF" opacity=".35" stroke="#E8F7FF" stroke-width="6"/>
+    ${Array.from({ length: 12 }, (_, i) => `<rect x="${550 + (i % 4) * 106}" y="${1170 - Math.floor(i / 4) * 64}" width="96" height="54" rx="6" fill="url(#money)"/>`).join('')}
+    ${Array.from({ length: 5 }, (_, i) => `<path d="M${560 + i * 86} ${980} l14 -30 h52 l14 30z" fill="#F7C531" stroke="#C98A06" stroke-width="3"/>`).join('')}
+    <rect x="590" y="840" width="340" height="66" rx="33" fill="#1B1F3B"/><text x="760" y="886" font-size="36" font-weight="900" text-anchor="middle" fill="#FFD23F">APLICAÇÃO</text></g>
+  <g id="clock" transform="translate(300 300)"><circle r="70" fill="#fff" stroke="#C9B38A" stroke-width="10"/><line id="hand1" x1="0" y1="0" x2="0" y2="-48" stroke="#1B1F3B" stroke-width="7" stroke-linecap="round"/><line id="hand2" x1="0" y1="0" x2="0" y2="-32" stroke="#E4572E" stroke-width="8" stroke-linecap="round"/></g>
+  <g id="s2c-rico">${person('rico4', { hair: 'slick', hairC: '#A9ABB8', skin: '#F1C27D', top: '#1F2A4D', suit: true, longSleeve: true, shades: true, pants: '#1B2340', item: 'watch' })}</g>
+  <g id="s2c-cash">${cash('s2c-cash-in')}</g>
+  <g id="s2c-coin">${coinFace('s2c-coin-in', true)}</g>
+  <g font-weight="900" fill="#fff"><text id="z1" font-size="44">Z</text><text id="z2" font-size="56">Z</text><text id="z3" font-size="70">Z</text></g>
+</svg>`;
+
+// ---------- S3 street ----------
+const crowd = [
+  ['c1', { hair: 'long', hairC: '#3A2A1E', skin: '#F1C27D', top: '#8E44AD', pants: '#2B2B33', item: 'bag' }, 120, 1150, .95, 1, 70, 45.7],
+  ['c2', { hair: 'afro', skin: '#6B3E1F', top: '#2E9E5B', pants: '#34495E' }, 480, 1150, .95, -1, 80, 46.1],
+  ['c3', { hair: 'short', hairC: '#C9C9C9', skin: '#E0AC69', top: '#3D5A80', glasses: true, longSleeve: true, pants: '#6B4F3A' }, 860, 1150, .95, 1, 55, 46.5],
+  ['c4', { hair: 'pony', hairC: '#2B1B12', skin: '#8D5524', top: '#FF7FA8', dress: true, item: 'bag' }, 300, 1430, 1.15, -1, 90, 45.9],
+  ['c5', { hair: 'cap', capC: '#2E9E5B', skin: '#C68642', top: '#FFC93C', pants: '#2F4B7C', item: 'phone' }, 700, 1430, 1.15, 1, 100, 46.3],
+  ['c6', { hair: 'rosa', skin: '#A0663A', top: '#2B6CB0', dress: true, earrings: true, item: 'bag' }, 1000, 1430, 1.15, -1, 75, 46.7],
+  ['c7', { hair: 'helmet', skin: '#F1C27D', top: '#E4572E', pants: '#1F3A5F' }, -50, 1150, .95, 1, 65, 46.9],
+  ['c8', { hair: 'afro', hairC: '#3A2A1E', skin: '#C68642', top: '#FFD23F', dress: true }, 560, 1430, 1.15, 1, 85, 47.1],
+];
+html += `<svg id="s3" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="url(#skyDay)"/>
+  <rect id="s3-night" width="1080" height="1440" fill="url(#skyNight)" opacity="0"/>
+  <circle cx="900" cy="140" r="60" fill="#FFE38A" id="sun"/>
+  ${house(-20, 760, 220, 200, '#FFD6A5')}${house(250, 740, 200, 180, '#B8E0D2', '#7A5236')}${house(560, 760, 220, 200, '#F8BBD0')}${house(860, 740, 220, 180, '#C5E1A5', '#7A5236')}
+  ${store('pad', 20, 1100, 320, 340, { name: 'PADARIA', aw: '#E7A33E', fs: 34 })}
+  ${store('mk3', 360, 1100, 380, 400, { name: 'MERCADINHO', aw: '#2E9E5B', fs: 36 })}
+  ${store('far3', 760, 1100, 300, 340, { name: 'FARMÁCIA', cross: true, aw: '#3DA35D', signC: '#fff', signT: '#2E9E5B', fs: 30 })}
+  <g id="contrata" filter="url(#ds)"><rect x="410" y="880" width="150" height="80" rx="12" fill="#FFD23F"/><text x="485" y="913" font-size="22" font-weight="900" text-anchor="middle" fill="#1B1F3B">CONTRATA-SE</text><text x="485" y="945" font-size="24" font-weight="900" text-anchor="middle" fill="#E4572E">VAGAS!</text></g>
+  <g id="passa" filter="url(#ds)"><g transform="rotate(-6 550 840)"><rect x="420" y="790" width="260" height="104" rx="14" fill="#fff" stroke="#D7263D" stroke-width="7"/><text x="550" y="836" font-size="32" font-weight="900" fill="#D7263D" text-anchor="middle">PASSA-SE</text><text x="550" y="874" font-size="32" font-weight="900" fill="#D7263D" text-anchor="middle">O PONTO</text></g></g>
+  <rect y="1100" width="1080" height="80" fill="#D9D2C5"/><rect y="1100" width="1080" height="8" fill="#BDB4A5"/>
+  <rect y="1180" width="1080" height="150" fill="#5E6270"/><path d="M0 1255 H1080" stroke="#fff" stroke-width="7" stroke-dasharray="50 40"/>
+  <rect y="1330" width="1080" height="110" fill="#D9D2C5"/>
+  <g id="s3-jorge">${person('jorge5', { hair: 'bald', hairC: '#8F8F8F', skin: '#C68642', top: '#FFFFFF', apron: '#2E9E5B', stache: true, stacheC: '#555', label: 'JORGE' })}</g>
+  ${crowd.map(c => `<g id="cw-${c[0]}">${person(c[0], c[1])}</g>`).join('')}
+  ${Array.from({ length: 12 }, (_, i) => `<g id="rc${i}">${coinPlain('rci' + i, 20)}</g>`).join('')}
+  <g id="tv" filter="url(#ds)">
+    <rect x="170" y="70" width="740" height="470" rx="28" fill="#1B1F3B"/><rect x="196" y="96" width="688" height="390" rx="14" fill="#0E3B2B"/>
+    <path d="M196 420 H884 M196 340 H884 M196 260 H884 M196 180 H884" stroke="#fff" opacity=".07" stroke-width="2"/>
+    <path id="tv-line" d="M230 440 L320 405 L390 420 L470 350 L540 365 L630 280 L700 296 L840 160" stroke="#3DDC84" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="220" y="114" width="110" height="40" rx="8" fill="#D7263D"/><text x="275" y="142" font-size="22" font-weight="900" text-anchor="middle" fill="#fff">AO VIVO</text>
+    <text x="560" y="182" font-size="56" font-weight="900" fill="#3DDC84" text-anchor="middle">BOLSA SOBE ▲</text>
+    <text x="540" y="522" font-size="30" font-weight="800" fill="#fff" text-anchor="middle">“O MERCADO ESTÁ ANIMADO!”</text>
+    ${Array.from({ length: 28 }, (_, i) => `<rect id="cf${i}" width="14" height="22" rx="3" fill="${['#FFD23F', '#E4572E', '#3DDC84', '#6FD3FF', '#FF8FB1'][i % 5]}"/>`).join('')}
+  </g>
+</svg>`;
+
+// ---------- S4 kitchen ----------
+html += `<svg id="s4" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="#F6DDBA"/>
+  ${Array.from({ length: 12 }, (_, i) => `<rect x="0" y="${i * 120}" width="1080" height="2" fill="#E9C99D"/>`).join('')}
+  <g filter="url(#ds)"><rect x="380" y="260" width="330" height="300" rx="14" fill="#FFF6E9"/><rect x="398" y="278" width="294" height="264" rx="8" fill="url(#skyDay)"/>
+    <path d="M398 278 h294 v40 q-147 30 -294 0z" fill="#FF8FA3"/><rect x="541" y="278" width="8" height="264" fill="#FFF6E9"/></g>
+  <g filter="url(#ds)"><rect x="40" y="420" width="200" height="560" rx="18" fill="#E8EEF3"/><rect x="40" y="610" width="200" height="6" fill="#C9D3DB"/><rect x="200" y="470" width="10" height="90" rx="5" fill="#9AA5AD"/><rect x="200" y="650" width="10" height="120" rx="5" fill="#9AA5AD"/></g>
+  <g filter="url(#ds)"><rect x="800" y="380" width="250" height="160" rx="10" fill="#C98B55"/><rect x="810" y="560" width="230" height="10" fill="#B07443"/><g transform="translate(900 560)"><rect x="-30" y="-60" width="60" height="60" rx="8" fill="#E4572E"/><circle cy="-80" r="30" fill="#5DBB63"/></g></g>
+  <rect y="1180" width="1080" height="260" fill="#C98B55"/><rect y="1180" width="1080" height="12" fill="#A86F3E"/>
+  <g id="s4-rosa">${person('rosa6', { hair: 'rosa', skin: '#8D5524', top: '#E4572E', dress: true, apron: '#FFF4E0', earrings: true })}</g>
+  <g id="s4-filho">${person('filho', { hair: 'cap', capC: '#2B6CB0', skin: '#7A4A20', top: '#FFC93C', pants: '#2F4B7C', label: 'LOJA', item: 'phone' })}</g>
+  <g filter="url(#ds)"><rect x="250" y="1100" width="580" height="40" rx="12" fill="#8D5A33"/><rect x="290" y="1140" width="26" height="240" fill="#6D4426"/><rect x="764" y="1140" width="26" height="240" fill="#6D4426"/>
+    <ellipse cx="460" cy="1092" rx="80" ry="16" fill="#fff"/><ellipse cx="460" cy="1084" rx="52" ry="11" fill="#E9C46A"/><rect x="600" y="1036" width="48" height="60" rx="10" fill="#E0F2F1"/></g>
+</svg>`;
+
+// ---------- S4b fallacy ----------
+html += `<svg id="s4b" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="#EEF1F7"/><circle cx="300" cy="700" r="380" fill="#E3E8F2"/>
+  <g filter="url(#ds)"><rect x="40" y="36" width="1000" height="110" rx="55" fill="#1B1F3B"/><text x="540" y="109" font-size="52" font-weight="900" fill="#FFD23F" text-anchor="middle">FALÁCIA DO EU-EMPRESÁRIO</text></g>
+  <g id="s4b-rico">${person('rico7', { hair: 'slick', hairC: '#A9ABB8', skin: '#F1C27D', top: '#1F2A4D', suit: true, longSleeve: true, shades: true, pants: '#1B2340', item: 'watch' })}</g>
+  <g filter="url(#ds)"><rect x="170" y="840" width="220" height="56" rx="28" fill="#FFD23F"/><text x="280" y="879" font-size="32" font-weight="900" text-anchor="middle" fill="#1B1F3B">PATRÃO</text></g>
+  <g id="s4b-filho">${person('filho7', { hair: 'cap', capC: '#2B6CB0', skin: '#7A4A20', top: '#FFC93C', pants: '#2F4B7C', label: 'LOJA', item: 'phone' })}</g>
+  <g id="bag" filter="url(#ds)"><path d="M-74 -40 Q-94 74 0 84 Q94 74 74 -40 Z" fill="#C8A165"/><path d="M-42 -40 L-28 -72 L28 -72 L42 -40Z" fill="#B48A4F"/><path d="M-50 -42 h100" stroke="#8A6A3A" stroke-width="8" stroke-linecap="round"/><text y="20" font-size="25" font-weight="900" text-anchor="middle" fill="#1B1F3B">MENOS</text><text y="50" font-size="25" font-weight="900" text-anchor="middle" fill="#1B1F3B">IMPOSTO</text></g>
+  <path id="uturn" d="M360 640 C 580 660, 780 770, 760 910 C 740 1020, 560 1010, 520 910 C 490 830, 450 720, 340 700" stroke="#E4572E" stroke-width="12" fill="none" stroke-linecap="round" filter="url(#glow)"/>
+  <path id="uturn-head" d="M0 0 L-30 -18 L-24 0 L-30 18 Z" fill="#E4572E"/>
+  <g id="s4b-coin">${coinPlain('s4b-coin-in', 26)}</g>
+  <g id="tag1" filter="url(#ds)"><rect x="50" y="180" width="290" height="76" rx="38" fill="#fff"/><text x="195" y="230" font-size="33" font-weight="800" text-anchor="middle">🚗 Carro novo</text></g>
+  <g id="tag2" filter="url(#ds)"><rect x="370" y="180" width="290" height="76" rx="38" fill="#fff"/><text x="515" y="230" font-size="33" font-weight="800" text-anchor="middle">📈 Aplicação</text></g>
+  <g id="tag3" filter="url(#ds)"><rect x="690" y="180" width="340" height="76" rx="38" fill="#fff"/><text x="860" y="230" font-size="33" font-weight="800" text-anchor="middle">✈️ Conta lá fora</text></g>
+  <g id="holerite" filter="url(#ds)"><rect x="600" y="1190" width="430" height="200" rx="18" fill="#fff"/><rect x="600" y="1190" width="430" height="56" rx="18" fill="#1B1F3B"/><rect x="600" y="1226" width="430" height="20" fill="#1B1F3B"/>
+    <text x="815" y="1230" font-size="30" font-weight="900" text-anchor="middle" fill="#fff">CONTRACHEQUE</text><text x="815" y="1295" font-size="30" font-weight="700" text-anchor="middle" fill="#6B6F8A">Salário:</text><text x="815" y="1352" font-size="44" font-weight="900" text-anchor="middle" fill="#D7263D">o mesmo 😐</text></g>
+</svg>`;
+
+// ---------- S5 services ----------
+html += `<svg id="s5" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="#E9EEF5"/>
+  <g transform="translate(540 260)" filter="url(#ds)">
+    <path d="M-120 -50 Q-150 120 0 130 Q150 120 120 -50 Z" fill="#3E9B54"/><path d="M-64 -50 L-44 -104 L44 -104 L64 -50Z" fill="#34864A"/><path d="M-80 -50 h160" stroke="#2A6E3B" stroke-width="12" stroke-linecap="round"/>
+    <text y="58" font-size="78" font-weight="900" fill="#fff" text-anchor="middle">R$</text>
+    <path d="M-150 20 Q0 70 150 20" stroke="#9AA5AD" stroke-width="14" fill="none" stroke-dasharray="22 10"/>
+    <g id="lock" transform="translate(100 80)"><rect x="-46" y="-10" width="92" height="74" rx="12" fill="#FFD23F"/><path d="M-27 -10 V-36 Q-27 -64 0 -64 Q27 -64 27 -36 V-10" stroke="#1B1F3B" stroke-width="11" fill="none"/><circle cy="22" r="9" fill="#1B1F3B"/></g>
+  </g>
+  <text x="540" y="480" font-size="40" font-weight="900" fill="#1B1F3B" text-anchor="middle">DINHEIRO TRAVADO LÁ EM CIMA</text>
+  ${[['SUS', '#D7263D', 'M-22 -60 h44 v38 h38 v44 h-38 v38 h-44 v-38 h-38 v-44 h38z'],
+     ['ESCOLA', '#2B6CB0', 'M-66 -36 L0 -68 L66 -36 L0 -4 Z M-44 -22 V34 Q0 60 44 34 V-22 L0 -2Z'],
+     ['SEGURANÇA', '#1F2A4D', 'M0 -72 L62 -46 V4 Q62 54 0 76 Q-62 54 -62 4 V-46Z']]
+    .map(([n, c, d], i) => `<g id="card${i}"><g filter="url(#ds)">
+      <rect x="${50 + i * 333}" y="620" width="313" height="440" rx="34" fill="#fff"/>
+      <circle cx="${206 + i * 333}" cy="800" r="110" fill="${c}" opacity=".1"/>
+      <g transform="translate(${206 + i * 333} 800)"><path d="${d}" fill="${c}"/></g>
+      <text x="${206 + i * 333}" y="980" font-size="${n.length > 7 ? 40 : 50}" font-weight="900" fill="#1B1F3B" text-anchor="middle">${n}</text></g>
+      <rect id="card${i}-grey" x="${50 + i * 333}" y="620" width="313" height="440" rx="34" fill="#6E7385" opacity="0"/>
+      <path id="card${i}-crack" d="M${110 + i * 333} 640 l44 96 l-34 62 l64 84 l-24 74 l54 100" stroke="#1B1F3B" stroke-width="8" fill="none" opacity="0" stroke-linejoin="round"/>
+    </g>`).join('')}
+</svg>`;
+
+// ---------- S6 Rosa to camera ----------
+html += `<svg id="s6" class="scene" viewBox="0 0 1080 1440">
+  <rect width="1080" height="1440" fill="#FFE3C2"/>
+  <circle cx="540" cy="900" r="560" fill="#FFD6A5"/><circle cx="540" cy="900" r="400" fill="#FFCB91" opacity=".6"/>
+  <g id="s6-rosa">${person('rosa8', { hair: 'rosa', skin: '#8D5524', top: '#E4572E', dress: true, apron: '#FFF4E0', earrings: true, item: 'pote' })}</g>
+</svg>`;
+S.innerHTML = html;
+
+// door slats for stores
+for (const id of ['mk3']) { const d = $(id + '-door'); const x = +d.getAttribute('x'), y = +d.getAttribute('y'), w = +d.getAttribute('width');
+  $(id + '-slats').innerHTML = Array.from({ length: 12 }, (_, i) => `<rect id="${id}-sl${i}" x="${x + 4}" y="${y + 14 + i * 20}" width="${w - 8}" height="4" fill="#6B757C"/>`).join(''); }
+
+// ================= chain flows =================
+const chest = p => [p[0], p[1] - 120];
+const FLOWS = [
+  { f: chest(W.rosa), to: [585, 2560], t: 10.8, d: 1.1, who: 'Ana do caixa', node: null },
+  { f: [585, 2560], to: chest(W.jorge), t: 12.0, d: 1.0, who: 'jorge3', count: 1 },
+  { f: chest(W.jorge), to: chest(W.ana), t: 13.4, d: 1.1, who: 'ana', count: 1 },
+  { f: chest(W.jorge), to: chest(W.atac), t: 14.3, d: 1.6, who: 'atac', count: 1 },
+  { f: chest(W.atac), to: chest(W.mot), t: 16.6, d: 1.1, who: 'mot', count: 1 },
+  { f: chest(W.atac), to: [1700, 1420], t: 17.4, d: 1.6, who: 'fab', count: 1 },
+  { f: [1700, 1420], to: chest(W.op1), t: 20.0, d: 1.0, who: 'op1', count: 1 },
+  { f: [1700, 1420], to: chest(W.op2), t: 20.15, d: 1.0, who: 'op2', count: 1 },
+  { f: [1700, 1420], to: chest(W.op3), t: 20.3, d: 1.0, who: 'op3', count: 1 },
+  { f: [1600, 1420], to: chest(W.agri), t: 21.0, d: 1.6, who: 'agri', count: 1 },
+  { f: chest(W.ana), to: [390, 1900], t: 23.6, d: 1.4, who: 'farm', count: 1 },
+  { f: chest(W.mot), to: [2115, 2560], t: 23.7, d: 1.4, who: 'posto', count: 1 },
+  { f: chest(W.op2), to: [2130, 1900], t: 23.8, d: 1.4, who: 'loja', count: 1 },
+  { f: chest(W.agri), to: [430, 1580], t: 23.9, d: 1.4, who: 'agro', count: 1 },
+  { f: [430, 1580], to: [1600, 1420], t: 25.4, d: 1.4, who: 'fab2', count: 0 },
+  { f: [2130, 1900], to: [1640, 2200], t: 25.5, d: 1.4, who: 'x', count: 0 },
+];
+const CHIP = '+R$';
+$('trails').innerHTML = FLOWS.map((f, i) => { const [x1, y1] = f.f, [x2, y2] = f.to; const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - Math.hypot(x2 - x1, y2 - y1) * .3;
+  f.path = `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`; return `<path id="tr${i}" d="${f.path}" stroke="#FFD23F" stroke-width="9" fill="none" stroke-linecap="round" opacity=".9" filter="url(#glow)"/>`; }).join('');
+$('flows').innerHTML = FLOWS.map((f, i) => `<g id="fl${i}">${coinPlain('fli' + i, 26)}</g>`).join('');
+$('chips').innerHTML = FLOWS.map((f, i) => `<g id="ch${i}"><circle cx="${f.to[0]}" cy="${f.to[1]}" r="40" fill="none" stroke="#FFD23F" stroke-width="8" id="ring${i}"/><g id="chp${i}"><rect x="${f.to[0] - 52}" y="${f.to[1] - 112}" width="104" height="50" rx="25" fill="#FFD23F"/><text x="${f.to[0]}" y="${f.to[1] - 76}" font-size="28" font-weight="900" text-anchor="middle" fill="#1B1F3B">${CHIP}</text></g></g>`).join('');
+const trLens = FLOWS.map((_, i) => $('tr' + i).getTotalLength());
+const CAM = [[0, 500, 2480, 1.5], [10.6, 500, 2480, 1.5], [13.2, 560, 2470, 1.3], [15.2, 1050, 2380, .85], [17.6, 1350, 2050, .7], [20.4, 1350, 1700, .62], [22.2, 1050, 1600, .58], [24.0, 1150, 1950, .44], [99, 1150, 1950, .44]];
+function cam(t) { let i = 0; while (i < CAM.length - 2 && t > CAM[i + 1][0]) i++; const a = CAM[i], b = CAM[i + 1]; const p = ease(prog(t, a[0], b[0]));
+  return [lerp(a[1], b[1], p), lerp(a[2], b[2], p), lerp(a[3], b[3], p)]; }
+
+// ================= bubbles & captions =================
+const bubbles = [
+  { id: 'b1', a: 1.9, b: 6.0, x: 110, y: 120, w: 860, tail: 'c', html: 'Dinheiro na minha mão<br>não esquenta! 😂' },
+  { id: 'b2', a: 50.9, b: 55.2, x: 250, y: 90, w: 800, tail: 'r', html: 'Mãe, se o meu patrão pagar menos imposto, ele vai me pagar mais!' },
+  { id: 'b3', a: 55.4, b: 59.2, x: 30, y: 120, w: 780, tail: 'l', html: 'Ô, meu filho… e quando foi que <u>sobrou</u> pra você? 😂' },
+  { id: 'b4', a: 75.6, b: 81.0, x: 50, y: 70, w: 980, tail: 'c', html: 'Antes de votar, pergunta: esse dinheiro vai chegar na mão de quem gasta <u>no teu bairro</u>?' },
+  { id: 'b5', a: 81.2, b: 84.6, x: 110, y: 110, w: 860, tail: 'c', html: 'Porque na minha mão…<br><span style="color:#E4572E">não esquenta!</span> 😂' },
+];
+$('bubbles').innerHTML = bubbles.map(b => `<div id="${b.id}" class="bubble tail-${b.tail}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px">${b.html}</div>`).join('');
+const caps = [
+  { a: 3.4, b: 6.0, html: 'E é assim que a economia funciona 👇' },
+  { a: 6.2, b: 10.4, html: 'R$ 1.000 pra Dona Rosa.<br>R$ 1.000 pra um bilionário.' },
+  { a: 10.4, b: 13.3, html: 'A Dona Rosa faz a feira no <span class="hl">mercadinho do Jorge</span>…' },
+  { a: 13.3, b: 16.5, html: '…o Jorge paga a <span class="hl">Ana do caixa</span> e repõe o estoque no <span class="hl">atacado</span>…' },
+  { a: 16.5, b: 19.9, html: '…o atacado paga o <span class="hl">motorista</span> e compra da <span class="hl">fábrica</span>…' },
+  { a: 19.9, b: 23.4, html: '…a fábrica paga os <span class="hl">operários</span> e compra do <span class="hl">produtor rural</span>…' },
+  { a: 23.4, b: 27.6, html: '…e cada um deles <span class="hl">gasta de novo</span>. O mesmo dinheiro passa por muitas mãos.' },
+  { a: 27.6, b: 31.0, html: 'Já o do bilionário vai pra aplicação… e <span class="hl">fica parado</span>.' },
+  { a: 31.0, b: 34.6, punch: 1, html: 'Na mão de quem precisa, o dinheiro <span class="hl">corre</span>.<br>Na mão de quem tem tudo, ele <span class="hl">para</span>.' },
+  { a: 34.7, b: 40.5, html: 'Põe dinheiro <span class="hl">embaixo</span>: o povo compra, o comércio vende e contrata.' },
+  { a: 40.5, b: 45.5, html: 'Põe só <span class="hl">em cima</span>: a bolsa sobe, todo mundo comemora…' },
+  { a: 45.5, b: 48.1, html: '…até o povo sumir e o mercadinho fechar por falta de cliente.' },
+  { a: 48.1, b: 50.6, punch: 1, html: 'Sem consumidor,<br><span class="hl">não existe empresa.</span>' },
+  { a: 58.9 + .1, b: 64.3, html: 'O funcionário defende o que é bom pro patrão… achando que <span class="hl">vai sobrar pra ele</span>.' },
+  { a: 64.3, b: 69.6, html: 'Mas o desconto de cima quase nunca desce. E sem povo com renda, <span class="hl">o patrão também quebra</span>.' },
+  { a: 69.7, b: 75.2, html: 'Quando o dinheiro trava lá em cima, falta pro <span class="hl">SUS</span>, pra <span class="hl">escola</span> e pra <span class="hl">segurança</span>.' },
+];
+const capEl = $('cap'); let capCur = -2;
+
+const SC = { s1: [0, 6.1], s2a: [6.0, 10.6], s2b: [10.5, 27.7], s2c: [27.6, 34.7], s3: [34.6, 50.7], s4: [50.6, 59.3], s4b: [59.2, 69.7], s5: [69.6, 75.3], s6: [75.2, 84.8] };
+const END = 84.6, TOTAL = 90.5;
+
+// ================= render =================
+function render(t) {
+  for (const [id, [a, b]] of Object.entries(SC)) { const o = a === 0 ? 1 - prog(t, b - .3, b) : win(t, a, b, .3); op(id, o); $(id).style.display = o > 0 ? 'block' : 'none'; }
+
+  if (t < 6.2) { // S1
+    const p = easeOut(prog(t, 0, .8));
+    place('s1-p', lerp(-300, 540, p), 1360, 3.3);
+    life('rosa1', t, { walk: t < .8, armR: t > .8 && t < 1.7 ? -20 : 0 });
+    setMood('rosa1', t > 1.9 && t < 4.8 ? 'laugh' : null);
+    const np = ease(prog(t, .9, 1.7)); place('s1-cash', lerp(560, 410, np), lerp(-120, 1150, np), 1.2, lerp(-30, 8, np));
+    op('s1-cash', 1 - prog(t, 1.9, 2.2));
+  }
+  if (t > 5.9 && t < 10.7) { // S2a
+    place('s2a-rosa', 260, 680, 2.0); life('rosa2', t, { armR: t > 7 && t < 8.4 ? -25 : 0 }); setMood('rosa2', t > 7.4 && t < 9 ? 'laugh' : null);
+    place('s2a-rico', 260, 1400, 2.0); life('rico2', t);
+    const a = ease(prog(t, 6.4, 7.2)), b = ease(prog(t, 6.6, 7.4));
+    place('s2a-c1', lerp(380, 340, a), lerp(-100, 560, a), .8, lerp(-20, 6, a)); op('s2a-c1', 1 - prog(t, 9.6, 10));
+    place('s2a-c2', lerp(380, 340, b), lerp(700, 1280, b), .8, lerp(-20, 6, b)); op('s2a-c2', 1 - prog(t, 9.6, 10));
+  }
+  if (t > 10.4 && t < 27.8) { // S2b chain
+    const [cx, cy, z] = cam(t); tr('cam', `translate(540 760) scale(${z}) translate(${-cx} ${-cy})`);
+    const ppl = { 'wp-rosa': ['rosa3', W.rosa], 'wp-ana': ['ana', W.ana], 'wp-jorge': ['jorge3', W.jorge], 'wp-mot': ['mot', W.mot], 'wp-atac': ['atac', W.atac],
+                  'wp-op1': ['op1', W.op1], 'wp-op2': ['op2', W.op2], 'wp-op3': ['op3', W.op3], 'wp-agri': ['agri', W.agri] };
+    for (const [g, [pid, p]] of Object.entries(ppl)) { place(g, p[0], p[1], 1); life(pid, t); }
+    let count = 0;
+    FLOWS.forEach((f, i) => {
+      const p = ease(prog(t, f.t, f.t + f.d)), L = trLens[i];
+      attr('tr' + i, 'stroke-dasharray', `${L * p} ${L + 10}`); op('tr' + i, t > f.t ? .85 : 0);
+      const pt = $('tr' + i).getPointAtLength(L * p);
+      place('fl' + i, pt.x, pt.y, 1, (t - f.t) * 360); op('fl' + i, t > f.t && t < f.t + f.d + .15 ? 1 : 0);
+      const arr = f.t + f.d; const rp = prog(t, arr, arr + .7);
+      attr('ring' + i, 'r', 30 + rp * 70); op('ring' + i, t > arr ? (1 - rp) : 0);
+      pop('chp' + i, t, arr, arr + 1.6, f.to[0], f.to[1] - 87);
+      if (t > arr && f.count) count += f.count;
+    });
+    $('cnt').textContent = count;
+    pop('counter', t, 11.4, 99, 540, 84);
+    // happy reactions
+    setMood('jorge3', t > 13.0 && t < 14.6 ? 'laugh' : null); setMood('ana', t > 14.5 && t < 16 ? 'laugh' : null);
+    setMood('mot', t > 17.7 && t < 19.2 ? 'laugh' : null); setMood('atac', t > 15.9 && t < 17.2 ? 'laugh' : null);
+    ['op1', 'op2', 'op3'].forEach(o => setMood(o, t > 21.1 && t < 22.8 ? 'laugh' : null)); setMood('agri', t > 22.6 && t < 24.4 ? 'laugh' : null);
+    setMood('rosa3', t > 10.5 && t < 11.4 ? 'talk' : null);
+    // truck
+    const tp = ease(prog(t, 15.0, 17.0)); place('truck', lerp(1250, 980, tp), 2470, 1);
+    const wr = tp * 720; tr('wh1', `translate(-80 -6) rotate(${wr})`); tr('wh2', `translate(100 -6) rotate(${wr})`);
+    for (let i = 0; i < 6; i++) { const ph = ((t * .35) + i / 6) % 1; const cx2 = i % 2 ? 1985 : 1910; attr('smk' + i, 'cx', cx2 + ph * 60); attr('smk' + i, 'cy', 900 - ph * 260); attr('smk' + i, 'r', 24 + ph * 30); op('smk' + i, .85 * (1 - ph)); }
+  }
+  if (t > 27.5 && t < 34.8) { // S2c vault
+    place('s2c-rico', 290, 1330, 2.2); life('rico4', t); setMood('rico4', t > 28.4 && t < 29.4 ? 'talk' : null);
+    const c = ease(prog(t, 27.9, 29.0)); place('s2c-cash', lerp(380, 760, c), lerp(1210, 1000, c), lerp(.8, .4, c), c * 30); op('s2c-cash', 1 - prog(t, 28.9, 29.2));
+    place('s2c-coin', 760, lerp(940, 1000, prog(t, 29.0, 29.5)), 1.2); op('s2c-coin', prog(t, 29.0, 29.4));
+    const zt = Math.max(0, t - 29.3);
+    ['z1', 'z2', 'z3'].forEach((z, i) => { const ph = ((zt * .6) + i / 3) % 1; attr(z, 'x', 800 + ph * 90 + i * 10); attr(z, 'y', 930 - ph * 200); op(z, t > 29.3 ? Math.sin(ph * Math.PI) : 0); });
+    tr('hand1', `rotate(${(t - 27.5) * 120})`); tr('hand2', `rotate(${(t - 27.5) * 12})`);
+  }
+  if (t > 34.5 && t < 50.8) { // S3 street
+    place('s3-jorge', 650, 1112, 1.05); life('jorge5', t);
+    setMood('jorge5', t > 47.4 ? 'sad' : (t > 37.6 && t < 40.4 ? 'laugh' : null));
+    crowd.forEach(([id, , x0, y, s, dir, sp, leave]) => {
+      const el = t - 34.6; let x = x0 + dir * sp * el; const tl = leave - 34.6;
+      const span = 1300; if (t < leave) { x = ((x + 110) % span + span) % span - 110; } else { let xl = x0 + dir * sp * tl; xl = ((xl + 110) % span + span) % span - 110; x = xl + dir * sp * 3.2 * (t - leave); }
+      place('cw-' + id, x, y, s, 0, dir < 0); life(id, t, { walk: true }); op('cw-' + id, 1 - prog(t, leave + .6, leave + 1.6));
+    });
+    for (let i = 0; i < 12; i++) { const st = 34.9 + i * .23, p = prog(t, st, st + 1.0);
+      const x = [90, 240, 420, 560, 700, 880, 1000, 160, 330, 620, 790, 960][i], y = i % 2 ? 1230 : 1360;
+      place('rc' + i, x, lerp(-60, y, ease(p)), 1, p * 360); op('rc' + i, p > 0 ? 1 - prog(t, st + 1.0, st + 1.3) : 0); }
+    const on = t > 35.4 && t < 46.4;
+    op('pad-glow', on || (t >= 46.4 && t < 46.9) ? .6 : 0); op('mk3-glow', t > 35.8 && t < 47.0 ? .6 : 0); op('far3-glow', t > 36.2 && t < 46.0 ? .6 : 0);
+    pop('contrata', t, 37.9, 46.3, 485, 920);
+    const tv = win(t, 40.5, 45.9, .4); op('tv', tv); tr('tv', `translate(540 300) scale(${.9 + .1 * backOut(prog(t, 40.5, 40.9))}) translate(-540 -300)`);
+    const ln = $('tv-line'), L = 820; ln.setAttribute('stroke-dasharray', L); ln.setAttribute('stroke-dashoffset', L * (1 - ease(prog(t, 40.8, 42.1))));
+    for (let i = 0; i < 28; i++) { const ph = (prog(t, 41.9, 45.9) * 1.3 + (i * .137) % 1) % 1; const x = 210 + (i * 97) % 640;
+      attr('cf' + i, 'x', x); attr('cf' + i, 'y', 110 + ph * 360); tr('cf' + i, `rotate(${ph * 720 + i * 30} ${x + 7} ${121 + ph * 360})`); op('cf' + i, t > 41.9 ? 1 : 0); }
+    op('s3-night', .75 * prog(t, 45.8, 47.6)); op('sun', 1 - prog(t, 45.8, 47));
+    const dp = ease(prog(t, 47.4, 48.8)); const d = $('mk3-door'); d.setAttribute('height', (400 - 154) * dp);
+    for (let i = 0; i < 12; i++) op(`mk3-sl${i}`, (14 + i * 20) < (400 - 154) * dp ? 1 : 0);
+    pop('passa', t, 48.7, 99, 550, 840);
+  }
+  if (t > 50.5 && t < 59.4) { // S4 kitchen
+    place('s4-rosa', 270, 1300, 2.7); place('s4-filho', 820, 1300, 2.6);
+    const ft = t > 50.9 && t < 55.0, rt = t > 55.4 && t < 59.0;
+    life('rosa6', t, { armR: rt ? -35 : 0, tilt: rt ? -4 : 0 }); life('filho', t, { armL: ft ? 30 : 0 });
+    setMood('filho', ft && talking(t) ? 'talk' : null); setMood('rosa6', rt ? 'laugh' : null);
+  }
+  if (t > 59.1 && t < 69.8) { // S4b
+    place('s4b-rico', 270, 830, 2.3); place('s4b-filho', 820, 1150, 2.1);
+    life('rico7', t, { armR: t > 60.1 && t < 61 ? -40 : 0 }); life('filho7', t);
+    const bp = ease(prog(t, 59.4, 60.2)); place('bag', lerp(330, 380, bp), lerp(-140, 700, bp), .85); op('bag', 1 - prog(t, 60.6, 60.9));
+    setMood('rico7', t > 60.1 && t < 61.6 ? 'laugh' : (t > 63.5 && t < 65 ? 'laugh' : null));
+    const up = $('uturn'), L = up.getTotalLength(), rp = ease(prog(t, 60.8, 63.4));
+    up.setAttribute('stroke-dasharray', `${L * rp} ${L}`); op('uturn', t > 60.8 ? 1 : 0);
+    const pt = up.getPointAtLength(L * rp), pt2 = up.getPointAtLength(Math.max(0, L * rp - 5));
+    const ang = Math.atan2(pt.y - pt2.y, pt.x - pt2.x) * 180 / Math.PI;
+    place('s4b-coin', pt.x, pt.y, 1, rp * 720); op('s4b-coin', t > 60.8 && t < 63.6 ? 1 : 0);
+    place('uturn-head', pt.x, pt.y, 1, ang); op('uturn-head', t > 63.4 ? 1 : 0);
+    pop('tag1', t, 63.6, 99, 195, 218); pop('tag2', t, 64.0, 99, 515, 218); pop('tag3', t, 64.4, 99, 860, 218);
+    pop('holerite', t, 65.4, 99, 815, 1290); setMood('filho7', t > 65.4 ? 'sad' : null);
+  }
+  if (t > 69.5 && t < 75.4) { // S5
+    pop('lock', t, 70.0, 99, 100, 80);
+    for (let i = 0; i < 3; i++) { const ct = 71.2 + i * .9; op(`card${i}-grey`, .55 * prog(t, ct, ct + .4)); op(`card${i}-crack`, prog(t, ct, ct + .2));
+      const sh = t > ct && t < ct + .3 ? Math.sin(t * 90) * 7 : 0; tr('card' + i, `translate(${sh} 0)`); }
+  }
+  if (t > 75.1 && t < 84.9) { // S6
+    const zp = ease(prog(t, 75.2, 76.0)); place('s6-rosa', 540, lerp(1600, 1640, zp), lerp(3.6, 4.6, zp));
+    const talkW = t > 75.6 && t < 81.0;
+    life('rosa8', t, { armL: talkW ? 20 + Math.sin(t * 3) * 8 : 0, tilt: t > 81.2 ? -5 : 0 });
+    setMood('rosa8', t > 81.2 ? 'laugh' : (talkW && talking(t) ? 'talk' : null));
+  }
+  for (const b of bubbles) { const e = $(b.id), o = win(t, b.a, b.b, .25), p = backOut(prog(t, b.a, b.a + .38)); e.style.opacity = t < b.a ? 0 : o; e.style.transform = `scale(${Math.max(.001, t < b.a ? 0 : p)})`; }
+  const ci = caps.findIndex(c => t >= c.a && t < c.b);
+  if (ci !== capCur) { capCur = ci; if (ci >= 0) { capEl.innerHTML = caps[ci].html; capEl.className = caps[ci].punch ? 'punch' : ''; } else { capEl.innerHTML = '<span class="idle">🍰 Dona Rosa explica a economia</span>'; capEl.className = ''; } }
+  if (ci >= 0) { const c = caps[ci]; capEl.style.opacity = win(t, c.a, c.b, .25); capEl.style.transform = `translateY(${(1 - easeOut(prog(t, c.a, c.a + .3))) * 26}px)`; } else { capEl.style.opacity = 1; capEl.style.transform = 'none'; }
+  $('end').style.opacity = prog(t, END, END + .5);
+  $('end').style.transform = `scale(${1.04 - .04 * easeOut(prog(t, END, END + 1.2))})`;
+  $('progress').style.width = (1080 * t / TOTAL) + 'px';
+}
+window.render = render; window.TOTAL = TOTAL;
+render(0);
+</script>
+</body>
+</html>
