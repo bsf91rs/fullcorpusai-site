@@ -1,10 +1,11 @@
 import numpy as np, wave, sys
-SR = 44100; T = 92.0; N = int(SR * T)
+SR = 44100; T = 96.0; N = int(SR * T)
 rng = np.random.default_rng(7)
 mix = np.zeros(N)
 
+OFF = 0.0
 def add(sig, t, g=1.0):
-    i = int(t * SR); j = min(N, i + len(sig))
+    i = int((t + OFF) * SR); j = min(N, i + len(sig))
     if i < N: mix[i:j] += g * sig[: j - i]
 
 def env(n, a=0.005, d=0.3):
@@ -41,10 +42,10 @@ def pl(m, d):
     return cache[k]
 beat = 60 / 100 / 2
 pattern = [0, 2, 1, 3, 2, 1, 3, 2]
-MEND = 86.0
+MEND = 90.0
 t = 0.0; bar = 0
 while t < MEND:
-    darkzone = (47.5 <= t < 53.0) or (61.0 <= t < 77.0) or (30.0 <= t < 33.5)
+    darkzone = (51.5 <= t < 57.0) or (65.0 <= t < 81.0) or (34.0 <= t < 37.5)
     prog = sad if darkzone else happy
     chord = prog[bar % 4]
     for k, idx in enumerate(pattern):
@@ -57,6 +58,8 @@ while t < MEND:
 for m in [48, 60, 64, 67, 72, 76]: add(pluck(note(m), 4.0, .998), MEND, 0.16)
 
 # --- sfx ---
+OFF = 4.0
+for tt_ in (-3.85, -3.5, -2.7, -1.9): pass
 def plim(t, f): add(tone(f, .8, .35, harm=(1, .3, .15)) + tone(f * 2.01, .8, .2, harm=(.4,)), t, .32)
 def popfx(t):
     n = int(.12 * SR); tt = np.arange(n) / SR
@@ -65,6 +68,7 @@ def whoosh(t, dur=.5): add(noise(dur, dur / 2, .08) * np.hanning(int(dur * SR)),
 def tick(t, f=2200): add(tone(f, .1, .03, harm=(1,)), t, .18)
 def thud(t): add(tone(70, .4, .12, harm=(1, .3)), t, .7)
 
+popfx(-3.85); whoosh(-3.5); popfx(-2.7); popfx(-1.9)
 whoosh(.2); popfx(.5)
 for i in range(6): tick(1.2 + i * .22 + .1, 1400 + i * 120)
 whoosh(6.1)

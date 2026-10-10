@@ -162,6 +162,12 @@
   <div class="abs quote" id="s9b" style="left:80px;right:80px;top:820px;font-size:118px;letter-spacing:-3px;opacity:0">“Porque na minha mão…<br><span class="coral">não esquenta!</span>” 😂</div>
 </div>
 
+<div id="intro" class="abs" style="inset:0">
+  <div class="abs" id="i1" style="left:80px;top:470px;font-size:64px;font-weight:700;color:#AEB3E0">Vou te apresentar</div>
+  <div class="abs big" id="i2" style="left:80px;top:560px;font-size:168px;letter-spacing:-5px">duas <span class="hl">falácias</span>:</div>
+  <div class="card abs" id="i3" style="left:80px;right:80px;top:980px;padding:44px 50px;font-size:66px;font-weight:900;border-color:rgba(255,210,63,.6);background:linear-gradient(90deg,rgba(255,210,63,.18),rgba(255,210,63,.03))">a do <span class="hl">“eu empresário”</span></div>
+  <div class="card abs" id="i4" style="left:80px;right:80px;top:1220px;padding:44px 50px;font-size:66px;font-weight:900;border-color:rgba(255,107,74,.6);background:linear-gradient(90deg,rgba(255,107,74,.2),rgba(255,107,74,.03))">e a do <span class="coral">“eu funcionário”</span></div>
+</div>
 <div id="kick"></div>
 <div id="sub"></div>
 <div id="bar"><i id="bari"></i></div>
@@ -257,7 +263,7 @@ const SUBS = [
 ];
 let subCur = -2, kickCur = -2;
 
-function render(t) {
+function renderMain(t) {
   for (const [id, [a, b]] of Object.entries(SC)) { const o = a === 0 ? 1 - prog(t, b - .3, b) : win(t, a, b, .35); const e = $(id); e.style.opacity = o; e.style.display = o > 0 ? 'block' : 'none'; }
   $('bgB').style.opacity = Math.max(win(t, 47.4, 53.2, .8), win(t, 61.0, 77.2, .8));
   // kicker
@@ -367,7 +373,15 @@ function render(t) {
   $('end').style.opacity = prog(t, END, END + .6);
   $('end').style.transform = `scale(${1.04 - .04 * easeOut(prog(t, END, END + 1.4))})`;
 }
-window.render = render; window.TOTAL = TOTAL;
+const INTRO = 4.0;
+function render(T) {
+  renderMain(T - INTRO);
+  const out = 1 - prog(T, INTRO - .4, INTRO);
+  $('intro').style.opacity = out; $('intro').style.display = out > 0 ? 'block' : 'none';
+  appear('i1', T, .15); appear('i2', T, .5); appear('i3', T, 1.3, 1e9, 70); appear('i4', T, 2.1, 1e9, 70);
+  $('bari').style.width = (100 * T / (TOTAL + INTRO)) + '%';
+}
+window.render = render; window.TOTAL = TOTAL + INTRO;
 render(0);
 </script>
 </body>
