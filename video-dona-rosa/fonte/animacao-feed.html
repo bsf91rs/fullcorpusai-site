@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Na minha mão não esquenta</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0D0F22; font-family: "Inter Display", "Inter", sans-serif; color: #fff; }
+  .bg { position: absolute; inset: 0; }
+  #bgA { background: radial-gradient(120% 75% at 50% 0%, #23285A 0%, #12152E 55%, #0D0F22 100%); }
+  #bgB { background: radial-gradient(120% 75% at 50% 0%, #3E1F30 0%, #1C1024 60%, #0E0A16 100%); opacity: 0; }
+  .grain { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px); background-size: 6px 6px; }
+  .sc { position: absolute; inset: 0; opacity: 0; }
+  .abs { position: absolute; }
+  #kick { position: absolute; top: 96px; left: 80px; font-size: 30px; font-weight: 700; letter-spacing: 6px; color: #FFD23F; text-transform: uppercase; white-space: nowrap; }
+  #kick::before { content: ""; display: inline-block; width: 46px; height: 6px; background: currentColor; border-radius: 3px; margin-right: 18px; vertical-align: middle; }
+  #sub { position: absolute; left: 80px; right: 80px; bottom: 120px; font-size: 54px; font-weight: 700; line-height: 1.22; color: #E6E8FF; }
+  #sub b { color: #fff; background: linear-gradient(transparent 60%, rgba(255,210,63,.55) 60%); }
+  #bar { position: absolute; left: 80px; right: 80px; bottom: 64px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); }
+  #bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, #FF6B4A, #FFD23F); }
+  .big { font-weight: 900; letter-spacing: -4px; line-height: .95; }
+  .hl { color: #FFD23F; } .coral { color: #FF6B4A; }
+  .card { background: rgba(255,255,255,.06); border: 1.5px solid rgba(255,255,255,.13); border-radius: 36px; }
+  .av { border-radius: 50%; overflow: hidden; flex: none; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .node { position: absolute; display: flex; align-items: center; gap: 22px; padding: 16px 36px 16px 16px; border-radius: 999px; font-size: 40px; font-weight: 800; white-space: nowrap; opacity: 0; }
+  .node .av { width: 100px; height: 100px; }
+  .node small { display: block; font-size: 27px; font-weight: 600; color: #AEB3E0; margin-top: 2px; }
+  .glow { box-shadow: 0 0 0 2px rgba(255,210,63,.9), 0 0 60px rgba(255,210,63,.35); border-color: transparent; }
+  .chip { position: absolute; padding: 16px 28px; border-radius: 999px; font-size: 32px; font-weight: 800; white-space: nowrap; opacity: 0; }
+  .plus { position: absolute; padding: 8px 18px; border-radius: 999px; background: #FFD23F; color: #1B1F3B; font-size: 28px; font-weight: 900; opacity: 0; }
+  .quote { font-size: 64px; font-weight: 900; line-height: 1.1; letter-spacing: -1.5px; }
+  .w { display: inline-block; opacity: 0; }
+  .grid { position: absolute; left: 70px; right: 70px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 26px; }
+  .grid .av { width: 160px; height: 160px; margin: 0 auto; }
+  #end { position: absolute; inset: 0; opacity: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px;
+         background: radial-gradient(circle at 50% 35%, #2A2F5C 0%, #0D0F22 70%); }
+  #end h1 { font-size: 112px; font-weight: 900; line-height: 1.04; letter-spacing: -3px; }
+  #end .tag { margin-top: 64px; color: #FFB4A2; font-size: 46px; font-weight: 800; }
+  #end .ai { position: absolute; bottom: 80px; left: 0; right: 0; color: #8C8FB0; font-size: 30px; font-weight: 500; }
+</style>
+<style>
+  html { width: 1536px !important; height: 1920px !important; overflow: hidden !important; background: #0D0F22; }
+  body { width: 1080px !important; margin-left: 228px !important; position: relative; overflow: visible !important; }
+  .bg, .grain { left: -228px !important; right: -228px !important; }
+  #end, #fin { background: transparent !important; isolation: isolate; }
+  #end::before, #fin::before { content: ""; position: absolute; top: 0; bottom: 0; left: -228px; right: -228px; z-index: -1;
+    background: radial-gradient(circle at 50% 35%, #2A2F5C 0%, #0D0F22 70%); }
+</style>
+</head>
+<body>
+<div id="bgA" class="bg"></div><div id="bgB" class="bg"></div><div class="grain"></div>
+<svg id="lines" class="abs" style="left:0;top:0" width="1080" height="1920"></svg>
+
+<!-- S1 hook -->
+<div id="s1" class="sc">
+  <div id="s1av" class="av abs" style="left:290px;top:300px;width:500px;height:500px"></div>
+  <div class="abs quote" style="left:80px;right:80px;top:900px;font-size:104px;letter-spacing:-3px" id="s1q"></div>
+  <div class="abs" style="left:80px;top:1250px;font-size:44px;font-weight:700;color:#AEB3E0" id="s1n">— Dona Rosa, vendedora de bolo de pote</div>
+</div>
+
+<!-- S2 numbers -->
+<div id="s2" class="sc">
+  <div class="abs big" style="top:230px;left:80px;font-size:260px;">R$<br><span class="hl" id="s2num">0</span></div>
+  <div class="abs" id="s2l" style="top:800px;left:80px;font-size:54px;font-weight:700;color:#AEB3E0;">Mesmo valor. Dois destinos.</div>
+  <div class="card abs" id="s2c1" style="left:80px;right:80px;top:920px;height:280px;display:flex;align-items:center;gap:40px;padding:0 44px;border-color:rgba(255,107,74,.6);background:linear-gradient(90deg,rgba(255,107,74,.22),rgba(255,107,74,.04));">
+    <div class="av" data-p="rosa" style="width:190px;height:190px"></div>
+    <div><div style="font-size:64px;font-weight:900;">Dona Rosa</div><div style="font-size:38px;color:#FFC2B3;font-weight:600;">gasta no bairro → <b style="color:#fff">circula</b></div></div></div>
+  <div class="card abs" id="s2c2" style="left:80px;right:80px;top:1230px;height:280px;display:flex;align-items:center;gap:40px;padding:0 44px;">
+    <div class="av" data-p="rico" style="width:190px;height:190px"></div>
+    <div><div style="font-size:64px;font-weight:900;">Bilionário</div><div style="font-size:38px;color:#AEB3E0;font-weight:600;">vai pra aplicação → <b style="color:#fff">para</b></div></div></div>
+</div>
+
+<!-- S3 chain -->
+<div id="s3" class="sc">
+  <div class="node card" id="n-rosa" style="left:70px;top:190px"><div class="av" data-p="rosa"></div><div>Dona Rosa<small>faz a feira</small></div></div>
+  <div class="node card glow" id="n-jorge" style="left:200px;top:410px"><div class="av" data-p="jorge"></div><div>Seu Jorge<small>dono do mercadinho</small></div></div>
+  <div class="node card" id="n-ana" style="left:50px;top:630px"><div class="av" data-p="ana"></div><div>Ana<small>do caixa</small></div></div>
+  <div class="node card glow" id="n-atac" style="left:500px;top:630px"><div class="av" data-p="atac"></div><div>Atacado<small>Seu Toninho</small></div></div>
+  <div class="node card" id="n-mot" style="left:60px;top:850px"><div class="av" data-p="mot"></div><div>Motorista<small>Ciro</small></div></div>
+  <div class="node card glow" id="n-fab" style="left:520px;top:850px"><div class="av" data-p="fab"></div><div>Fábrica<small>Dona Lúcia</small></div></div>
+  <div class="node card" id="n-op" style="left:50px;top:1070px"><div class="av" data-p="op"></div><div>Operários<small>da fábrica</small></div></div>
+  <div class="node card" id="n-agri" style="left:500px;top:1070px"><div class="av" data-p="agri"></div><div>Produtor rural<small>Seu Zé</small></div></div>
+  <div class="chip card" id="k-farm" style="left:40px;top:1290px">💊 Farmácia</div>
+  <div class="chip card" id="k-posto" style="left:300px;top:1290px">⛽ Posto</div>
+  <div class="chip card" id="k-loja" style="left:520px;top:1290px">🛋️ Loja</div>
+  <div class="chip card" id="k-agro" style="left:740px;top:1290px">🌱 Agro</div>
+  <div class="card abs" id="counter" style="left:230px;top:1405px;width:620px;height:130px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:26px;background:rgba(255,210,63,.12);border-color:rgba(255,210,63,.6);opacity:0">
+    <div id="cnt" style="font-size:92px;font-weight:900;color:#FFD23F;letter-spacing:-3px;min-width:110px;text-align:center">0</div><div style="font-size:36px;font-weight:700;line-height:1.1;">pessoas e empresas<br>ganharam</div></div>
+  <div id="plusbox"></div>
+</div>
+
+<!-- S4 billionaire -->
+<div id="s4" class="sc">
+  <div class="av abs" data-p="rico" id="s4av" style="left:340px;top:240px;width:400px;height:400px"></div>
+  <div class="card abs" id="vault" style="left:200px;top:760px;width:680px;height:470px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
+    <svg width="210" height="200" viewBox="0 0 210 200" fill="none"><rect x="20" y="70" width="170" height="120" rx="20" stroke="#AEB3E0" stroke-width="12"/><path d="M55 70V48a50 50 0 0 1 100 0v22" stroke="#AEB3E0" stroke-width="12"/><circle cx="105" cy="125" r="14" fill="#AEB3E0"/><path d="M105 136v22" stroke="#AEB3E0" stroke-width="10" stroke-linecap="round"/></svg>
+    <div style="font-size:56px;font-weight:900;letter-spacing:4px">APLICAÇÃO</div></div>
+  <div class="abs" id="s4note" style="left:400px;top:520px;width:280px;height:120px;border-radius:16px;background:linear-gradient(180deg,#7BD389,#3E9B54);display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:900">R$ 1.000</div>
+  <div class="abs" id="zz" style="left:760px;top:700px;font-size:80px;font-weight:900;color:#AEB3E0"></div>
+  <div class="abs big" id="s4p" style="left:80px;right:60px;top:430px;font-size:118px;opacity:0;letter-spacing:-3px">Na mão de quem precisa, o dinheiro <span class="hl">corre</span>.<br><br><span style="color:#AEB3E0">Na mão de quem tem tudo, ele</span> <span class="coral">para</span>.</div>
+</div>
+
+<!-- S5 policies -->
+<div id="s5" class="sc">
+  <div class="grid" id="crowd" style="top:220px"></div>
+  <div class="abs" id="tag5" style="left:80px;top:830px;font-size:46px;font-weight:900;padding:14px 30px;border-radius:999px;background:#3DDC97;color:#0D0F22">💰 DINHEIRO EMBAIXO</div>
+  <svg class="abs" id="store" style="left:240px;top:950px" width="600" height="480" viewBox="0 0 600 480" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M40 140h520l-40-100H80z" stroke="#3DDC97" stroke-width="14" id="st1"/>
+    <path d="M70 140v320h460V140" stroke="#3DDC97" stroke-width="14" id="st2"/>
+    <text x="300" y="112" text-anchor="middle" font-family="Inter" font-weight="900" font-size="44" fill="#3DDC97" stroke="none" id="st3">MERCADINHO</text>
+    <rect x="130" y="190" width="340" height="270" rx="8" fill="rgba(255,210,63,.25)" id="stwin"/>
+    <rect x="130" y="190" width="340" height="0" rx="8" fill="#5A2633" id="stdoor"/>
+    <g id="slats"></g>
+    <g id="contrata"><rect x="160" y="250" width="280" height="96" rx="16" fill="#FFD23F" stroke="none"/><text x="300" y="292" text-anchor="middle" font-family="Inter" font-weight="900" font-size="34" fill="#0D0F22" stroke="none">CONTRATA-SE</text><text x="300" y="330" text-anchor="middle" font-family="Inter" font-weight="800" font-size="28" fill="#0D0F22" stroke="none">vagas abertas!</text></g>
+    <g id="passa" transform="rotate(-8 300 300)"><rect x="140" y="240" width="320" height="120" rx="16" fill="#fff" stroke="none"/><text x="300" y="290" text-anchor="middle" font-family="Inter" font-weight="900" font-size="44" fill="#D7263D" stroke="none">PASSA-SE</text><text x="300" y="342" text-anchor="middle" font-family="Inter" font-weight="900" font-size="44" fill="#D7263D" stroke="none">O PONTO</text></g>
+  </svg>
+  <div class="card abs" id="tv" style="left:90px;right:90px;top:220px;height:560px;padding:40px;background:#0B2A20;border-color:rgba(61,220,151,.5);opacity:0">
+    <div style="display:flex;align-items:center;gap:20px"><span style="background:#D7263D;padding:6px 16px;border-radius:8px;font-size:26px;font-weight:900">AO VIVO</span><span style="font-size:58px;font-weight:900;color:#3DDC97">BOLSA SOBE ▲</span></div>
+    <svg width="820" height="330" viewBox="0 0 820 330" style="margin-top:20px"><path d="M0 80H820M0 160H820M0 240H820" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+      <path id="tvline" d="M10 300 L110 260 L190 280 L290 200 L370 220 L480 130 L560 150 L800 20" stroke="#3DDC97" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div style="font-size:34px;font-weight:800;color:#CFF5E3;margin-top:6px">“O mercado está animado!”</div>
+    <div id="confetti"></div>
+  </div>
+  <div class="abs big" id="s5p" style="left:80px;right:60px;top:560px;font-size:150px;opacity:0">Sem<br>consumidor,<br><span class="coral">não existe<br>empresa.</span></div>
+</div>
+
+<!-- S6 dialogue -->
+<div id="s6" class="sc">
+  <div class="card abs" id="q1" style="left:70px;right:70px;top:300px;padding:50px;display:flex;gap:40px;align-items:center">
+    <div class="av" data-p="filho" style="width:220px;height:220px"></div>
+    <div><div style="font-size:30px;font-weight:700;color:#AEB3E0;margin-bottom:14px">O FILHO, QUE TRABALHA NUMA LOJA</div><div style="font-size:54px;font-weight:800;line-height:1.18">“Mãe, se o meu patrão pagar menos imposto, <span class="hl">ele vai me pagar mais!</span>”</div></div></div>
+  <div class="card abs" id="q2" style="left:70px;right:70px;top:900px;padding:50px;display:flex;gap:40px;align-items:center;border-color:rgba(255,107,74,.6);background:linear-gradient(90deg,rgba(255,107,74,.2),rgba(255,107,74,.04))">
+    <div class="av" data-p="rosa" style="width:220px;height:220px"></div>
+    <div><div style="font-size:30px;font-weight:700;color:#FFC2B3;margin-bottom:14px">DONA ROSA</div><div style="font-size:54px;font-weight:800;line-height:1.18">“Ô, meu filho… e quando foi que <span class="coral">sobrou pra você?</span>” 😂</div></div></div>
+</div>
+
+<!-- S7 fallacy -->
+<div id="s7" class="sc">
+  <div class="abs" id="s7rico" style="left:80px;top:470px;text-align:center"><div class="av" data-p="rico" style="width:280px;height:280px"></div><div style="margin-top:18px;font-size:42px;font-weight:900;color:#FFD23F">PATRÃO</div></div>
+  <div class="abs" id="s7filho" style="left:700px;top:880px;text-align:center"><div class="av" data-p="filho" style="width:220px;height:220px"></div><div style="margin-top:14px;font-size:36px;font-weight:900;color:#AEB3E0">FUNCIONÁRIO</div></div>
+  <div class="abs" id="bag" style="left:150px;top:240px;width:150px;height:150px;border-radius:40px 40px 60px 60px;background:#C8A165;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#2A1A0A;line-height:1.1;text-align:center">MENOS<br>IMPOSTO</div>
+  <svg class="abs" style="left:0;top:0" width="1080" height="1500" fill="none">
+    <defs><filter id="g2"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <path id="curve" d="M370 600 C 600 600, 800 700, 790 840 C 780 960, 600 990, 540 880 C 490 790, 470 660, 380 640" stroke="#FF6B4A" stroke-width="12" stroke-linecap="round" filter="url(#g2)"/>
+    <path id="curvehead" d="M0 0 L-34 -20 L-26 0 L-34 20Z" fill="#FF6B4A"/>
+    <g id="s7coin"><circle r="26" fill="#FFD23F"/><text y="9" font-size="24" font-weight="900" text-anchor="middle" fill="#6B4A00" font-family="Inter">R$</text></g>
+  </svg>
+  <div class="abs" style="left:80px;right:80px;top:200px;display:flex;gap:18px;flex-wrap:wrap" id="tags">
+    <div class="card" style="padding:18px 30px;font-size:36px;font-weight:800;border-radius:999px;opacity:0">🚗 Carro novo</div>
+    <div class="card" style="padding:18px 30px;font-size:36px;font-weight:800;border-radius:999px;opacity:0">📈 Aplicação</div>
+    <div class="card" style="padding:18px 30px;font-size:36px;font-weight:800;border-radius:999px;opacity:0">✈️ Conta lá fora</div></div>
+  <div class="card abs" id="holerite" style="left:560px;top:1200px;width:440px;padding:28px 34px;opacity:0;border-color:rgba(255,107,74,.6)">
+    <div style="font-size:28px;font-weight:800;color:#AEB3E0;letter-spacing:3px">CONTRACHEQUE</div><div style="font-size:52px;font-weight:900;margin-top:8px">Salário: <span class="coral">o mesmo</span></div></div>
+</div>
+
+<!-- S8 services -->
+<div id="s8" class="sc">
+  <div class="abs" style="left:0;right:0;top:250px;text-align:center"><svg width="300" height="300" viewBox="0 0 300 300" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M90 80 L70 40 h160 l-20 40" stroke="#3DDC97" stroke-width="12"/><path d="M90 80 Q20 160 50 240 Q150 290 250 240 Q280 160 210 80Z" stroke="#3DDC97" stroke-width="12"/>
+    <text x="150" y="200" text-anchor="middle" font-family="Inter" font-weight="900" font-size="70" fill="#3DDC97" stroke="none">R$</text>
+    <g id="lock"><rect x="185" y="190" width="90" height="74" rx="14" fill="#FFD23F" stroke="none"/><path d="M205 190v-22a25 25 0 0 1 50 0v22" stroke="#FFD23F" stroke-width="11"/><circle cx="230" cy="226" r="9" fill="#0D0F22" stroke="none"/></g></svg>
+    <div style="font-size:44px;font-weight:900;letter-spacing:3px;margin-top:10px">DINHEIRO TRAVADO LÁ EM CIMA</div></div>
+  <div class="abs" style="left:60px;right:60px;top:780px;display:flex;gap:24px" id="svc"></div>
+</div>
+
+<!-- S9 Rosa final -->
+<div id="s9" class="sc">
+  <div class="av abs" data-p="rosa" id="s9av" style="left:310px;top:220px;width:460px;height:460px"></div>
+  <div class="abs quote" id="s9a" style="left:80px;right:80px;top:780px;font-size:76px">“Antes de votar, pergunta: esse dinheiro vai chegar na mão de quem gasta <span class="hl">no teu bairro</span>?”</div>
+  <div class="abs quote" id="s9b" style="left:80px;right:80px;top:820px;font-size:118px;letter-spacing:-3px;opacity:0">“Porque na minha mão…<br><span class="coral">não esquenta!</span>” 😂</div>
+</div>
+
+<div id="intro" class="abs" style="inset:0">
+  <div class="abs" id="i1" style="left:80px;top:470px;font-size:64px;font-weight:700;color:#AEB3E0">Vou te apresentar</div>
+  <div class="abs big" id="i2" style="left:80px;top:560px;font-size:168px;letter-spacing:-5px">duas <span class="hl">falácias</span>:</div>
+  <div class="card abs" id="i3" style="left:80px;right:80px;top:980px;padding:44px 50px;font-size:66px;font-weight:900;border-color:rgba(255,210,63,.6);background:linear-gradient(90deg,rgba(255,210,63,.18),rgba(255,210,63,.03))">a do <span class="hl">“eu empresário”</span></div>
+  <div class="card abs" id="i4" style="left:80px;right:80px;top:1220px;padding:44px 50px;font-size:66px;font-weight:900;border-color:rgba(255,107,74,.6);background:linear-gradient(90deg,rgba(255,107,74,.2),rgba(255,107,74,.03))">e a do <span class="coral">“eu funcionário”</span></div>
+</div>
+<div id="kick"></div>
+<div id="sub"></div>
+<div id="bar"><i id="bari"></i></div>
+<div id="end"><h1>Sem povo com renda,<br>não tem empresa.<br><span class="hl">Nem país.</span></h1><div class="tag">Dinheiro que circula é dinheiro que trabalha.</div>
+  <div class="ai">Animação produzida com auxílio de inteligência artificial</div></div>
+
+<div id="fin" style="position:absolute;inset:0;opacity:0;display:none;background:radial-gradient(circle at 50% 30%, #23285A 0%, #0D0F22 70%);padding:0 80px">
+  <div class="abs" style="left:80px;top:380px;font-size:34px;font-weight:700;letter-spacing:6px;color:#FFD23F">— SÓ PRA VOCÊ SABER</div>
+  <div class="abs big" id="f1" style="left:80px;right:80px;top:470px;font-size:132px;letter-spacing:-4px">Isso não é<br><span class="hl">opinião.</span></div>
+  <div class="abs" id="f2" style="left:80px;right:80px;top:820px;font-size:56px;font-weight:700;line-height:1.25;color:#E6E8FF">Na economia, isso tem nome: <b style="color:#fff;background:linear-gradient(transparent 60%,rgba(255,210,63,.55) 60%)">fluxo circular da renda</b> e <b style="color:#fff;background:linear-gradient(transparent 60%,rgba(255,210,63,.55) 60%)">efeito multiplicador</b>.</div>
+  <div class="card abs" id="f3" style="left:80px;right:80px;top:1180px;padding:40px 46px;font-size:44px;font-weight:700;line-height:1.25;color:#E6E8FF">📚 É conteúdo básico, ensinado em qualquer livro de introdução à economia.</div>
+  <div class="abs" style="left:0;right:0;bottom:80px;text-align:center;color:#8C8FB0;font-size:30px;font-weight:500">Animação produzida com auxílio de inteligência artificial</div>
+</div>
+<script src="avatars.js"></script>
+<script>
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const backOut = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const win = (t, a, b, f = .35) => Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b));
+const $ = id => document.getElementById(id);
+// appear: fade + rise + slight scale-in
+function appear(el, t, a, b = 1e9, dy = 40) {
+  if (typeof el === 'string') el = $(el); if (!el) return;
+  const p = prog(t, a, a + .5), o = Math.min(easeOut(p), 1 - prog(t, b - .3, b));
+  el.style.opacity = t < a ? 0 : o;
+  el.style.transform = `translateY(${(1 - easeOut(p)) * dy}px) scale(${.96 + .04 * backOut(p)})`;
+}
+function popIn(el, t, a, b = 1e9) {
+  if (typeof el === 'string') el = $(el); if (!el) return;
+  const p = prog(t, a, a + .45); el.style.opacity = t < a ? 0 : Math.min(1, p * 3) * (1 - prog(t, b - .3, b));
+  el.style.transform = `scale(${Math.max(.001, backOut(p))})`;
+}
+
+// ---------- avatars ----------
+document.querySelectorAll('[data-p]').forEach(e => e.innerHTML = avatar(PEOPLE[e.dataset.p]));
+$('s1av').innerHTML = avatar(PEOPLE.rosa);
+// extra crowd people
+const crowdP = [
+  PEOPLE.ana, PEOPLE.mot, { ...PEOPLE.rosa, skin: '#A0663A', wrapC: '#2B6CB0', top: '#2B6CB0', bg: '#7FD8FF' }, PEOPLE.op, PEOPLE.atac,
+  { hair: 'afro', skin: '#6B3E1F', top: '#8E44AD', clothes: ['tee'], bg: '#B794F6' }, PEOPLE.agri, { hair: 'longwave', hairC: '#C8A165', skin: '#F1C27D', top: '#FF6B4A', clothes: ['tee'], bg: '#FFB86B' }, PEOPLE.filho, PEOPLE.jorge,
+  { hair: 'short', hairC: '#BDBDBD', skin: '#E0AC69', top: '#3D5A80', clothes: ['polo'], glasses: true, bg: '#9BE564' }, PEOPLE.fab, { hair: 'pony', hairC: '#24170F', skin: '#C68642', top: '#3DDC97', clothes: ['tee'], bg: '#FF8FB1' },
+  { hair: 'cap', capC: '#2E9E5B', skin: '#F1C27D', top: '#FFD23F', clothes: ['tee'], beard: true, hairC: '#5A3220', bg: '#7FD8FF' }, { hair: 'afro', hairC: '#3A2A1E', skin: '#8D5524', top: '#E4572E', clothes: ['dress'], bg: '#FFD23F' },
+];
+$('crowd').innerHTML = crowdP.map((p, i) => `<div class="av" id="cr${i}">${avatar(p)}</div>`).join('');
+$('svc').innerHTML = [['SUS', '#FF6B4A', '🏥'], ['ESCOLA', '#7FD8FF', '🎒'], ['SEGURANÇA', '#B794F6', '🛡️']].map(([n, c, e], i) => `
+  <div class="card" id="sv${i}" style="flex:1;height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;position:relative;overflow:hidden;border-color:${c}66">
+    <div style="font-size:120px">${e}</div><div style="font-size:${n.length > 7 ? 40 : 50}px;font-weight:900;color:${c}">${n}</div>
+    <svg id="crk${i}" style="position:absolute;inset:0;opacity:0" width="100%" height="100%" viewBox="0 0 300 420" preserveAspectRatio="none"><path d="M60 0 l40 100 l-30 60 l60 80 l-24 70 l54 110" stroke="#fff" stroke-width="7" fill="none" stroke-linejoin="round"/></svg>
+    <div id="dim${i}" style="position:absolute;inset:0;background:#0D0F22;opacity:0"></div></div>`).join('');
+$('confetti').innerHTML = Array.from({ length: 30 }, (_, i) => `<i id="cf${i}" style="position:absolute;width:14px;height:24px;border-radius:3px;background:${['#FFD23F', '#FF6B4A', '#3DDC97', '#7FD8FF', '#FF8FB1'][i % 5]}"></i>`).join('');
+$('slats').innerHTML = Array.from({ length: 12 }, (_, i) => `<rect id="sl${i}" x="134" y="${200 + i * 22}" width="332" height="5" fill="#8A3A4A"/>`).join('');
+// hook quote words
+const qw = 'Dinheiro na minha mão não esquenta!'.split(' ');
+$('s1q').innerHTML = qw.map((w, i) => `<span class="w" id="qw${i}">${i >= 4 ? `<span class="coral">${w}</span>` : w}</span>`).join(' ');
+
+// ---------- chain links ----------
+const NODES = ['rosa', 'jorge', 'ana', 'atac', 'mot', 'fab', 'op', 'agri'];
+const box = id => { const e = $(id); return { x: e.offsetLeft, y: e.offsetTop, w: e.offsetWidth, h: e.offsetHeight }; };
+const LINKS = [ // from, to, start, dur, gain
+  ['n-rosa', 'n-jorge', 13.4, 1.2, 1], ['n-jorge', 'n-ana', 15.8, 1.1, 1], ['n-jorge', 'n-atac', 16.2, 1.2, 1],
+  ['n-atac', 'n-mot', 18.8, 1.1, 1], ['n-atac', 'n-fab', 19.2, 1.2, 1], ['n-fab', 'n-op', 21.8, 1.1, 3], ['n-fab', 'n-agri', 22.2, 1.2, 1],
+  ['n-op', 'k-farm', 24.6, 1.0, 1], ['n-op', 'k-posto', 24.8, 1.0, 1], ['n-agri', 'k-loja', 25.0, 1.0, 1], ['n-agri', 'k-agro', 25.2, 1.0, 1],
+];
+const NODE_T = { 'n-rosa': 12.6, 'n-jorge': 14.3, 'n-ana': 16.6, 'n-atac': 17.1, 'n-mot': 19.6, 'n-fab': 20.1, 'n-op': 22.6, 'n-agri': 23.1, 'k-farm': 25.4, 'k-posto': 25.6, 'k-loja': 25.8, 'k-agro': 26.0 };
+let linesSvg = `<defs><filter id="g"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g id="chainlines" opacity="0">`;
+LINKS.forEach(([a, b, , , ], i) => {
+  const A = box(a), B = box(b); const x1 = A.x + Math.min(A.w * .5, 160), y1 = A.y + A.h, x2 = B.x + Math.min(B.w * .5, 160), y2 = B.y; const my = (y1 + y2) / 2;
+  const dashed = b.startsWith('k-');
+  linesSvg += `<path id="ln${i}" d="M${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}" stroke="#FFD23F" stroke-width="${dashed ? 5 : 7}" fill="none" stroke-linecap="round" filter="url(#g)" ${dashed ? 'opacity=".75"' : ''}/>`;
+});
+linesSvg += `</g><g id="coins">${LINKS.map((_, i) => `<g id="cn${i}" opacity="0"><circle r="24" fill="#FFD23F"/><text y="9" font-size="22" font-weight="900" text-anchor="middle" fill="#6B4A00" font-family="Inter">R$</text></g>`).join('')}</g>`;
+$('lines').innerHTML = linesSvg;
+const LL = LINKS.map((_, i) => $('ln' + i).getTotalLength());
+$('plusbox').innerHTML = LINKS.map(([, b, , , g], i) => { const B = box(b); return `<div class="plus" id="pl${i}" style="left:${B.x + B.w - 70}px;top:${B.y - 22}px">+R$</div>`; }).join('');
+
+// ---------- timeline ----------
+const SC = { s1: [0, 6.2], s2: [6.0, 12.3], s3: [12.2, 30.2], s4: [30.0, 37.2], s5: [37.0, 53.2], s6: [53.0, 61.2], s7: [61.0, 71.2], s8: [71.0, 77.2], s9: [77.0, 86.2] };
+const END = 86.0, FIN = 92.0, TOTAL = 99.0;
+const KICK = [[0, 6, 'Economia sem enrolação', '#FFD23F'], [6, 12.2, 'Mesmo valor, dois destinos', '#FFD23F'], [12.2, 30.1, 'Para onde vai o dinheiro', '#FFD23F'],
+  [30.1, 37.1, 'E o dinheiro do bilionário?', '#AEB3E0'], [37.1, 42.5, 'Política 1: dinheiro embaixo', '#3DDC97'], [42.5, 53.1, 'Política 2: só em cima', '#FF6B4A'],
+  [53.1, 61.1, 'Na hora do jantar', '#FFD23F'], [61.1, 71.1, 'A falácia do eu-empresário', '#FF6B4A'], [71.1, 77.1, 'A conta chega pra você', '#FF6B4A'], [77.1, 86, 'O recado da Dona Rosa', '#FFD23F']];
+const SUBS = [
+  [6.4, 12.2, 'R$ 1.000 pra Dona Rosa. R$ 1.000 pra um bilionário. <b>O que cada um faz?</b>'],
+  [12.4, 15.6, 'A Dona Rosa faz a feira no <b>mercadinho do Seu Jorge</b>…'],
+  [15.6, 18.6, '…que paga a <b>Ana do caixa</b> e repõe o estoque no <b>atacado</b>…'],
+  [18.6, 21.6, '…o atacado paga o <b>motorista</b> e compra da <b>fábrica</b>…'],
+  [21.6, 24.4, '…a fábrica paga os <b>operários</b> e compra do <b>produtor rural</b>…'],
+  [24.4, 30.0, '…e cada um deles <b>gasta de novo</b>. O mesmo dinheiro passa por muitas mãos.'],
+  [30.3, 33.6, 'Já o do bilionário vai pra aplicação… e <b>fica parado</b>.'],
+  [37.3, 42.5, 'Põe dinheiro <b>embaixo</b>: o povo compra, o comércio vende e contrata.'],
+  [42.6, 47.6, 'Põe só <b>em cima</b>: a bolsa sobe, todo mundo comemora…'],
+  [47.6, 50.6, '…até o povo parar de comprar e o mercadinho <b>fechar</b>.'],
+  [61.4, 66.2, 'O funcionário defende o que é bom pro patrão… achando que <b>vai sobrar pra ele</b>.'],
+  [66.2, 71.0, 'Mas o desconto de cima quase nunca desce. E sem povo com renda, <b>o patrão também quebra</b>.'],
+  [71.3, 77.0, 'Quando o dinheiro trava lá em cima, falta pro <b>SUS</b>, pra <b>escola</b> e pra <b>segurança</b>.'],
+];
+let subCur = -2, kickCur = -2;
+
+function renderMain(t) {
+  for (const [id, [a, b]] of Object.entries(SC)) { const o = a === 0 ? 1 - prog(t, b - .3, b) : win(t, a, b, .35); const e = $(id); e.style.opacity = o; e.style.display = o > 0 ? 'block' : 'none'; }
+  $('bgB').style.opacity = Math.max(win(t, 47.4, 53.2, .8), win(t, 61.0, 77.2, .8));
+  // kicker
+  const ki = KICK.findIndex(k => t >= k[0] && t < k[1]);
+  if (ki !== kickCur) { kickCur = ki; if (ki >= 0) { $('kick').textContent = KICK[ki][2]; $('kick').style.color = KICK[ki][3]; } }
+  if (ki >= 0) { const k = KICK[ki]; $('kick').style.opacity = win(t, k[0], k[1], .3); $('kick').style.transform = `translateX(${(1 - easeOut(prog(t, k[0], k[0] + .5))) * -30}px)`; } else $('kick').style.opacity = 0;
+  // subtitle
+  const si = SUBS.findIndex(s => t >= s[0] && t < s[1]);
+  if (si !== subCur) { subCur = si; $('sub').innerHTML = si >= 0 ? SUBS[si][2] : ''; }
+  if (si >= 0) { const s = SUBS[si]; $('sub').style.opacity = win(t, s[0], s[1], .3); $('sub').style.transform = `translateY(${(1 - easeOut(prog(t, s[0], s[0] + .4))) * 24}px)`; }
+  $('bari').style.width = (100 * t / TOTAL) + '%';
+  $('lines').style.opacity = $('s3').style.opacity; $('lines').style.display = $('s3').style.display;
+
+  // S1
+  if (t < 6.3) {
+    const p = prog(t, .2, .9); $('s1av').style.opacity = easeOut(p); $('s1av').style.transform = `scale(${.7 + .3 * backOut(p)}) translateY(${Math.sin(t * 2) * 6}px)`;
+    qw.forEach((_, i) => { const a = 1.2 + i * .22, e = $('qw' + i), q = prog(t, a, a + .35); e.style.opacity = q; e.style.transform = `translateY(${(1 - easeOut(q)) * 40}px)`; });
+    appear('s1n', t, 3.0);
+  }
+  // S2
+  if (t > 5.9 && t < 12.4) {
+    const n = Math.round(1000 * easeOut(prog(t, 6.4, 8.0))); $('s2num').textContent = n.toLocaleString('pt-BR');
+    appear('s2l', t, 8.0); appear('s2c1', t, 8.8, 1e9, 80); appear('s2c2', t, 9.6, 1e9, 80);
+  }
+  // S3
+  if (t > 12.1 && t < 30.3) {
+    $('chainlines').setAttribute('opacity', 1);
+    for (const [id, a] of Object.entries(NODE_T)) appear(id, t, a, 1e9, 30);
+    let cnt = 0;
+    LINKS.forEach(([, , a, d, g], i) => {
+      const p = ease(prog(t, a, a + d)), L = LL[i], ln = $('ln' + i);
+      ln.setAttribute('stroke-dasharray', `${L * p} ${L + 20}`); ln.style.opacity = t > a + .02 ? 1 : 0;
+      const pt = ln.getPointAtLength(L * p); const c = $('cn' + i);
+      c.setAttribute('transform', `translate(${pt.x} ${pt.y}) scale(${1 + .15 * Math.sin(p * Math.PI)})`); c.setAttribute('opacity', t > a && t < a + d + .2 ? 1 : 0);
+      popIn('pl' + i, t, a + d, a + d + 1.4);
+      if (t >= a + d) cnt += g;
+    });
+    $('cnt').textContent = cnt; appear('counter', t, 13.0);
+    const last = LINKS.filter(l => t >= l[2] + l[3]).length; const bump = LINKS.some(l => t >= l[2] + l[3] && t < l[2] + l[3] + .25);
+    $('cnt').style.transform = `scale(${bump ? 1.25 : 1})`;
+  }
+  // S4
+  if (t > 29.9 && t < 37.3) {
+    const hideA = 1 - prog(t, 33.4, 33.8);
+    $('s4av').style.opacity = easeOut(prog(t, 30.1, 30.6)) * hideA; $('s4av').style.transform = `translateY(${Math.sin(t * 2) * 5}px)`;
+    $('vault').style.opacity = easeOut(prog(t, 30.4, 30.9)) * hideA;
+    const np = ease(prog(t, 31.0, 31.8)); $('s4note').style.opacity = (t > 30.6 ? 1 : 0) * (1 - prog(t, 31.7, 31.9));
+    $('s4note').style.transform = `translateY(${np * 420}px) scale(${1 - .5 * np}) rotate(${np * 10}deg)`;
+    const zt = Math.max(0, t - 32); $('zz').innerHTML = t > 32 && t < 33.6 ? ['z', 'zZ', 'zZz'][Math.floor(zt * 2.5) % 3] : '';
+    const pp = prog(t, 33.6, 34.2); $('s4p').style.opacity = easeOut(pp); $('s4p').style.transform = `translateY(${(1 - easeOut(pp)) * 40}px)`;
+  }
+  // S5
+  if (t > 36.9 && t < 53.3) {
+    const tvOn = win(t, 42.5, 47.6, .4), punch = prog(t, 50.6, 51.1);
+    crowdP.forEach((_, i) => {
+      const e = $('cr' + i); const a = 37.3 + i * .1, p = prog(t, a, a + .4);
+      const off = 47.6 + i * .17, g = prog(t, off, off + .3);
+      e.style.opacity = easeOut(p) * (1 - .55 * g) * (1 - .7 * tvOn) * (1 - punch);
+      e.style.filter = `grayscale(${g})`;
+      const coin = t > 38.2 + (i % 5) * .15 && t < 40 ? Math.sin((t - 38.2 - (i % 5) * .15) * 6) * 8 : 0;
+      e.style.transform = `scale(${.8 + .2 * backOut(p)}) translateY(${-Math.abs(coin)}px)`;
+    });
+    $('crowd').style.transform = `translateY(${tvOn * 40}px)`;
+    const tagTxt = t < 42.5 ? '💰 DINHEIRO EMBAIXO' : '📉 SÓ EM CIMA'; if ($('tag5').textContent !== tagTxt) $('tag5').textContent = tagTxt;
+    $('tag5').style.background = t < 42.5 ? '#3DDC97' : '#FF6B4A';
+    appear('tag5', t, 37.4, 50.7); if (t > 42.5 && t < 43) $('tag5').style.transform = `scale(${backOut(prog(t, 42.5, 42.9))})`;
+    const st = $('store'); st.style.opacity = easeOut(prog(t, 37.6, 38.1)) * (1 - punch);
+    const red = prog(t, 47.6, 48.4); const col = red > .5 ? '#FF6B4A' : '#3DDC97';
+    ['st1', 'st2'].forEach(id => $(id).setAttribute('stroke', col)); $('st3').setAttribute('fill', col);
+    $('stwin').setAttribute('opacity', 1 - red);
+    popIn('contrata', t, 39.4, 47.8);
+    const dp = ease(prog(t, 48.4, 49.8)); $('stdoor').setAttribute('height', 270 * dp);
+    for (let i = 0; i < 12; i++) $('sl' + i).setAttribute('opacity', (10 + i * 22) < 270 * dp ? 1 : 0);
+    $('passa').style.opacity = prog(t, 49.8, 50.0); $('passa').style.transformOrigin = '300px 300px'; $('passa').setAttribute('transform', `rotate(-8 300 300) translate(300 300) scale(${Math.max(.001, backOut(prog(t, 49.8, 50.2)))}) translate(-300 -300)`);
+    $('tv').style.opacity = tvOn; $('tv').style.transform = `scale(${.94 + .06 * backOut(prog(t, 42.5, 42.95))})`;
+    const ln = $('tvline'); ln.setAttribute('stroke-dasharray', 1000); ln.setAttribute('stroke-dashoffset', 1000 * (1 - ease(prog(t, 42.8, 44))));
+    for (let i = 0; i < 30; i++) { const ph = (prog(t, 43.8, 47.6) * 1.4 + (i * .137) % 1) % 1; const e = $('cf' + i);
+      e.style.left = (40 + (i * 89) % 780) + 'px'; e.style.top = (20 + ph * 480) + 'px'; e.style.transform = `rotate(${ph * 720 + i * 30}deg)`; e.style.opacity = t > 43.8 ? 1 : 0; }
+    const pp = prog(t, 50.6, 51.2); $('s5p').style.opacity = easeOut(pp); $('s5p').style.transform = `translateY(${(1 - easeOut(pp)) * 50}px)`;
+  }
+  // S6
+  if (t > 52.9 && t < 61.3) { appear('q1', t, 53.3, 1e9, 60); appear('q2', t, 57.2, 1e9, 60); $('q1').style.opacity = Math.min(+$('q1').style.opacity, t > 57.2 ? .55 : 1); }
+  // S7
+  if (t > 60.9 && t < 71.3) {
+    appear('s7rico', t, 61.2); appear('s7filho', t, 61.6);
+    const bp = ease(prog(t, 61.6, 62.3)); $('bag').style.opacity = (t > 61.5 ? 1 : 0) * (1 - prog(t, 62.6, 62.9)); $('bag').style.transform = `translateY(${bp * 330}px) scale(${1 - .3 * bp})`;
+    const cv = $('curve'), L = cv.getTotalLength(), rp = ease(prog(t, 63.0, 65.4));
+    cv.setAttribute('stroke-dasharray', `${L * rp} ${L}`); cv.style.opacity = t > 63 ? 1 : 0;
+    const pt = cv.getPointAtLength(L * rp), p2 = cv.getPointAtLength(Math.max(0, L * rp - 5)), ang = Math.atan2(pt.y - p2.y, pt.x - p2.x) * 180 / Math.PI;
+    $('s7coin').setAttribute('transform', `translate(${pt.x} ${pt.y})`); $('s7coin').style.opacity = t > 63 && t < 65.5 ? 1 : 0;
+    $('curvehead').setAttribute('transform', `translate(${pt.x} ${pt.y}) rotate(${ang})`); $('curvehead').style.opacity = t > 65.4 ? 1 : 0;
+    [...$('tags').children].forEach((e, i) => popIn(e, t, 65.6 + i * .4));
+    appear('holerite', t, 67.0, 1e9, 50);
+  }
+  // S8
+  if (t > 70.9 && t < 77.3) {
+    popIn('lock', t, 71.6); $('lock').style.transformOrigin = '230px 226px';
+    for (let i = 0; i < 3; i++) { const a = 71.4 + i * .2; appear('sv' + i, t, a, 1e9, 50); const c = 72.8 + i * .9;
+      $('crk' + i).style.opacity = prog(t, c, c + .15); $('dim' + i).style.opacity = .5 * prog(t, c, c + .4);
+      if (t > c && t < c + .3) $('sv' + i).style.transform = `translateX(${Math.sin(t * 90) * 8}px)`; }
+  }
+  // S9
+  if (t > 76.9 && t < 86.3) {
+    const p = prog(t, 77.2, 77.9); $('s9av').style.opacity = easeOut(p); $('s9av').style.transform = `scale(${.8 + .2 * backOut(p)}) translateY(${Math.sin(t * 2) * 6}px) rotate(${t > 82 ? Math.sin(t * 9) * 3 : 0}deg)`;
+    appear('s9a', t, 77.8, 81.9); appear('s9b', t, 82.0);
+  }
+  $('end').style.opacity = prog(t, END, END + .6);
+  $('end').style.transform = `scale(${1.04 - .04 * easeOut(prog(t, END, END + 1.4))})`;
+  const fo = prog(t, FIN, FIN + .5); $('fin').style.opacity = fo; $('fin').style.display = fo > 0 ? 'block' : 'none';
+  appear('f1', t, FIN + .3); appear('f2', t, FIN + 1.2); appear('f3', t, FIN + 2.6, 1e9, 60);
+}
+const INTRO = 4.0;
+function render(T) {
+  renderMain(T - INTRO);
+  const out = 1 - prog(T, INTRO - .4, INTRO);
+  $('intro').style.opacity = out; $('intro').style.display = out > 0 ? 'block' : 'none';
+  appear('i1', T, .15); appear('i2', T, .5); appear('i3', T, 1.3, 1e9, 70); appear('i4', T, 2.1, 1e9, 70);
+  $('bari').style.width = (100 * T / (TOTAL + INTRO)) + '%';
+}
+window.render = render; window.TOTAL = TOTAL + INTRO;
+render(0);
+</script>
+</body>
+</html>
